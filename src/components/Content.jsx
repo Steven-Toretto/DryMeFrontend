@@ -41,7 +41,7 @@ function Content() {
         <div className="max-w-7xl mx-auto px-6 flex flex-col lg:flex-row items-center gap-10">
           <div className="lg:w-1/2">
             <h1 className="text-4xl md:text-5xl font-extrabold leading-tight mb-4">
-              We Are <span className="text-yellow-300">Quality</span> Laundry Finder In Your City
+              We Are <span className="text-white">Quality</span> Laundry Finder In Your City
             </h1>
             <p className="text-blue-100 max-w-xl mb-6">
               Fast pickups, professional cleaning, and doorstep delivery — all from trusted local shops.
@@ -56,7 +56,7 @@ function Content() {
               />
               <Link
                 to="/shops"
-                className="inline-block bg-yellow-300 text-blue-700 font-semibold px-5 py-3 rounded-lg shadow hover:opacity-95 transition"
+                className="inline-block bg-white/90 text-blue-700 font-semibold px-5 py-3 rounded-lg shadow hover:opacity-95 transition"
               >
                 Find Shops
               </Link>
@@ -245,13 +245,13 @@ function Content() {
       </section>
 
       {/* CTA */}
-      <section className="py-16 bg-gradient-to-r from-yellow-300 to-yellow-200 text-blue-900 text-center">
+      <section className="py-16 bg-gradient-to-r from-blue-900 to-blue-400 text-white text-center">
         <div className="max-w-4xl mx-auto px-6">
           <h2 className="text-2xl md:text-3xl font-extrabold mb-4">Ready to Experience Fresh Laundry?</h2>
           <p className="text-sm mb-6">Book a pickup now and enjoy doorstep delivery from trusted local shops.</p>
           <div className="flex justify-center gap-4">
             <Link to="/bookpickup" className="bg-blue-900 text-white px-6 py-3 rounded-lg font-semibold hover:opacity-95 transition">Book Your Pickup</Link>
-            <Link to="/shops" className="px-6 py-3 rounded-lg border border-blue-900 text-blue-900 hover:bg-blue-50 transition">Browse Shops</Link>
+            <Link to="/shops" className="px-6 py-3 rounded-lg border border-white text-white hover:bg-blue-900 transition">Browse Shops</Link>
           </div>
         </div>
       </section>
