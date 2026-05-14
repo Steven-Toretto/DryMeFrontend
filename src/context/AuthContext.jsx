@@ -1,277 +1,119 @@
-import axios from "axios";
+import { createContext, useState, useEffect } from "react";
 
-const API = axios.create({
-  baseURL: `${import.meta.env.VITE_API_URL}/api/`,
-});
+export const AuthContext = createContext();
 
-// ============================
-// 🔐 ATTACH TOKEN TO EVERY REQUEST
-// ============================
+const AuthProvider = ({ children }) => {
 
-API.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("access");
+  // =========================
+  // 🔐 TOKEN
+  // =========================
+  const [token, setToken] = useState(
+    localStorage.getItem("access") || null
+  );
 
-    if (token) {
-      config.headers = config.headers || {};
-      config.headers.Authorization = `Bearer ${token}`;
+  // =========================
+  // 👤 USER
+  // =========================
+  const [user, setUser] = useState(() => {
+    try {
+      const storedUser = localStorage.getItem("user");
+
+      return storedUser
+        ? JSON.parse(storedUser)
+        : null;
+
+    } catch (error) {
+      console.error("User parse error:", error);
+      return null;
+    }
+  });
+
+  // =========================
+  // ✅ LOGIN
+  // =========================
+  const loginUser = (data) => {
+
+    // Ensure required fields exist
+    if (!data?.access || !data?.refresh) {
+      console.error("Invalid login response:", data);
+      return;
     }
 
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+    // Save tokens
+    localStorage.setItem("access", data.access);
+    localStorage.setItem("refresh", data.refresh);
 
-// ============================
-// 🔐 AUTH
-// ============================
+    // Build user object
+    const userData = {
+      username: data.username,
+      role: data.role,
+      profile_image: data.profile_image || null,
+    };
 
-export const registerUser = async (data) => {
-  const res = await API.post("register/", data);
-  return res.data;
+    // Save user
+    localStorage.setItem(
+      "user",
+      JSON.stringify(userData)
+    );
+
+    // Update state
+    setToken(data.access);
+    setUser(userData);
+  };
+
+  // =========================
+  // 🚪 LOGOUT
+  // =========================
+  const logoutUser = () => {
+
+    localStorage.removeItem("access");
+    localStorage.removeItem("refresh");
+    localStorage.removeItem("user");
+
+    setToken(null);
+    setUser(null);
+  };
+
+  // =========================
+  // 🔄 SYNC ON PAGE REFRESH
+  // =========================
+  useEffect(() => {
+
+    const storedToken = localStorage.getItem("access");
+
+    try {
+      const storedUser = JSON.parse(
+        localStorage.getItem("user")
+      );
+
+      if (storedToken) {
+        setToken(storedToken);
+      }
+
+      if (storedUser) {
+        setUser(storedUser);
+      }
+
+    } catch (error) {
+      console.error("Stored user parse error:", error);
+
+      localStorage.removeItem("user");
+    }
+
+  }, []);
+
+  return (
+    <AuthContext.Provider
+      value={{
+        token,
+        user,
+        loginUser,
+        logoutUser,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
-export const loginUser = async (username, password) => {
-  const res = await API.post("login/", {
-    username,
-    password,
-  });
-
-  return res.data;
-};
-
-// ============================
-// 🏪 SHOPS
-// ============================
-
-export const getShops = async () => {
-  const res = await API.get("shops/");
-  return res.data;
-};
-
-export const createShop = async (data) => {
-  const res = await API.post("shops/", data, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
-
-  return res.data;
-};
-
-export const deleteShop = async (id) => {
-  const res = await API.delete(`shops/${id}/`);
-  return res.data;
-};
-
-export const updateShop = async (id, data) => {
-  const res = await API.put(`shops/${id}/`, data);
-  return res.data;
-};
-
-// ============================
-// 🧺 SERVICES
-// ============================
-
-export const getServices = async (shopId = null) => {
-  let url = "services/";
-
-  if (shopId) {
-    url += `?shop=${shopId}`;
-  }
-
-  const res = await API.get(url);
-  return res.data;
-};
-
-export const createService = async (data) => {
-  const res = await API.post("services/", data);
-  return res.data;
-};
-
-// ============================
-// 📦 ORDERS
-// ============================
-
-export const getOrders = async () => {
-  const res = await API.get("orders/");
-  return res.data;
-};
-
-export const getOwnerOrders = async () => {
-  const res = await API.get("owner/orders/");
-  return res.data;
-};
-
-export const createOrder = async (data) => {
-  const res = await API.post("orders/", data);
-  return res.data;
-};
-
-export const updateOrderStatus = async (id, status) => {
-  const res = await API.put(`orders/${id}/status/`, {
-    status,
-  });
-
-  return res.data;
-};
-
-// ============================
-// ⭐ FEATURED SHOPS
-// ============================
-
-export const getFeaturedShops = async () => {
-  const res = await API.get("featured-shops/");
-  return res.data;
-};
-
-export default API;
-
-
-
-
-
-
-// import { createContext, useState, useEffect } from "react";
-
-// export const AuthContext = createContext();
-
-// const AuthProvider = ({ children }) => {
-//   // 🔐 TOKEN
-//   const [token, setToken] = useState(() =>
-//     localStorage.getItem("access")
-//   );
-
-//   // 👤 USER
-//   const [user, setUser] = useState(() => {
-//     const stored = localStorage.getItem("user");
-//     return stored ? JSON.parse(stored) : null;
-//   });
-
-//   // =========================
-//   // ✅ LOGIN (NO REDIRECT HERE)
-//   // =========================
-//   const loginUser = (data) => {
-//     // data = response from API
-
-//     localStorage.setItem("access", data.access);
-//     localStorage.setItem("refresh", data.refresh);
-
-//     const userData = {
-//       username: data.username,
-//       role: data.role,
-//       profile_image: data.profile_image || null,
-//     };
-
-//     localStorage.setItem("user", JSON.stringify(userData));
-
-//     setToken(data.access);
-//     setUser(userData);
-//   };
-
-//   // =========================
-//   // 🚪 LOGOUT
-//   // =========================
-//   const logoutUser = () => {
-//     localStorage.removeItem("access");
-//     localStorage.removeItem("refresh");
-//     localStorage.removeItem("user");
-
-//     setToken(null);
-//     setUser(null);
-//   };
-
-//   // =========================
-//   // 🔄 SYNC ON LOAD
-//   // =========================
-//   useEffect(() => {
-//     const storedToken = localStorage.getItem("access");
-//     const storedUser = localStorage.getItem("user");
-
-//     if (storedToken) setToken(storedToken);
-//     if (storedUser) setUser(JSON.parse(storedUser));
-//   }, []);
-
-//   return (
-//     <AuthContext.Provider
-//       value={{
-//         token,
-//         user,
-//         loginUser,
-//         logoutUser,
-//       }}
-//     >
-//       {children}
-//     </AuthContext.Provider>
-//   );
-// };
-
-// export default AuthProvider;
-
-
-
-
-
-
-
-
-
-// // import { createContext, useState } from "react";
-
-// // export const AuthContext = createContext();
-
-// // const AuthProvider = ({ children }) => {
-// //   const [authTokens, setAuthTokens] = useState(() =>
-// //     localStorage.getItem("tokens")
-// //       ? JSON.parse(localStorage.getItem("tokens"))
-// //       : null
-// //   );
-
-// //   // Login
-// //   const loginUser = async (username, password) => {
-// //   try {
-// //     const response = await fetch("http://127.0.0.1:8000/api/login/", {
-// //       method: "POST",
-// //       headers: {
-// //         "Content-Type": "application/json",
-// //       },
-// //       body: JSON.stringify({ username, password }),
-// //     });
-
-// //     const data = await response.json();
-
-// //     if (response.status === 200) {
-// //       setAuthTokens(data);
-// //       localStorage.setItem("tokens", JSON.stringify(data));
-
-// //       //  ROLE-BASED REDIRECT
-// //       if (data.role === "owner") {
-// //         window.location.href = "/dashboard";
-// //       } else {
-// //         window.location.href = "/shops";
-// //       }
-
-// //       return { success: true }; //  IMPORTANT
-// //     } else {
-// //       return { success: false }; //  IMPORTANT
-// //     }
-// //   } catch (error) {
-// //     return { success: false }; //  IMPORTANT
-// //   }
-// // };
-
-// //   //  Logout
-// //   const logoutUser = () => {
-// //     setAuthTokens(null);
-// //     localStorage.removeItem("tokens");
-// //     window.location.href = "/login";
-// //   };
-
-// //   return (
-// //     <AuthContext.Provider value={{ authTokens, loginUser, logoutUser }}>
-// //       {children}
-// //     </AuthContext.Provider>
-// //   );
-// // };
-
-// // export default AuthProvider;
+export default AuthProvider;
