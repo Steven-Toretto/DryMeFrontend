@@ -19,7 +19,7 @@ function Hero() {
 
         {/* Headline */}
         <h1 className="text-4xl md:text-6xl font-extrabold text-white leading-tight mb-6">
-          Laundry Made <span className="text-blue-400">Simple</span> &{" "}
+           Made <span className="text-blue-400">Simple</span> &{" "}
           <span className="text-blue-400">Fast</span>
         </h1>
 
