@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getOrders, getOwnerOrders, updateOrderStatus } from "../api";
  import { FaPhoneAlt } from "react-icons/fa";
 import { FaMapMarkerAlt } from "react-icons/fa";
+import {Link} from "react-router-dom"
 
 function Orders() {
   const [orders, setOrders] = useState([]);
@@ -58,7 +59,7 @@ const role = user?.role;
   if (orders.length === 0) {
     return (
       <div className="min-h-[50vh] flex items-center justify-center">
-        <p className="text-gray-500">No orders yet</p>
+        <Link to="/shops" className="text-gray-500">No orders yet <span className="text-blue-500">add</span> </Link> 
       </div>
     );
   }

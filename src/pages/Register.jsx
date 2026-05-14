@@ -178,7 +178,7 @@ function Register() {
             value={form.role}
           >
             <option value="customer">Customer</option>
-            <option value="owner">Shop Owner</option>
+            <option value="owner">Laundry Owner</option>
           </select>
 
           {/* Submit */}
