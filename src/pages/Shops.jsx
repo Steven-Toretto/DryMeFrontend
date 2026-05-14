@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { getShops, deleteShop } from "../api";
 import { useNavigate } from "react-router-dom";
 import { FaMapMarkerAlt } from "react-icons/fa";
-
+import {Link} from "react-router-dom"
+import { User } from "lucide-react";
 
 function Shops() {
   const [shops, setShops] = useState([]);
   const navigate = useNavigate();
 
-  const user = JSON.parse(localStorage.getItem("user")); // assumes you store user
+  const user = JSON.parse(localStorage.getItem("user")); 
 
   useEffect(() => {
     fetchShops();
@@ -19,7 +20,7 @@ function Shops() {
     setShops(data);
   };
 
-  // 🗑️ DELETE SHOP
+  //  DELETE SHOP
   const handleDelete = async (id) => {
     const confirmDelete = window.confirm("Delete this shop?");
     if (!confirmDelete) return;
@@ -46,6 +47,22 @@ function Shops() {
         {shops.map((shop) => {
           const isOwner =
             user?.role === "owner" && user?.username === shop.owner;
+
+          if(!user){
+            return(
+              <div className="min-h-[50vh] items-center justify-center">
+                <Link to="/login" className="text-gray-500"> <span text-blue-500>Login</span> to view available laundry shops</Link>
+              </div>
+            );
+          }
+
+          if(shops.length === 0){
+            return(
+              <div className="min-h-[50vh] flex items-center justify-center">
+                <p className="text-gray-500">No available laundry shops</p>
+              </div>
+            );
+          }
 
           return (
             <div

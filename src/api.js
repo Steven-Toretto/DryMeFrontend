@@ -47,6 +47,7 @@ export const loginUser = async (username, password) => {
 // 🏪 SHOPS
 // ============================
 
+
 export const getShops = async () => {
   const res = await API.get("shops/");
   return res.data;
