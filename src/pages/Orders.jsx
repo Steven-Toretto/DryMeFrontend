@@ -4,6 +4,9 @@ import { getOrders, getOwnerOrders, updateOrderStatus } from "../api";
 import { FaMapMarkerAlt } from "react-icons/fa";
 import {Link} from "react-router-dom"
 
+import { useContext } from "react";
+import { AuthContext } from "../context/AuthContext";
+
 function Orders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,9 +27,19 @@ const role = user?.role;
     }
   };
 
-  useEffect(() => {
+  
+// avoids fetching before token exists, preventing unauthorized errors and ensuring orders load correctly after login. This is crucial for a smooth user experience, especially when navigating directly to the orders page after authentication.
+const { token } = useContext(AuthContext);
+
+useEffect(() => {
+  if (token) {
     fetchOrders();
-  }, []);
+  }
+}, [token]);
+
+  // useEffect(() => {
+  //   fetchOrders();
+  // }, []);
 
   const handleStatusUpdate = async (id, status) => {
     try {

@@ -5,15 +5,27 @@ import { FaMapMarkerAlt } from "react-icons/fa";
 import {Link} from "react-router-dom"
 import { User } from "lucide-react";
 
+import { useContext } from "react";
+import { AuthContext } from "../context/AuthContext";
+
 function Shops() {
   const [shops, setShops] = useState([]);
   const navigate = useNavigate();
 
   const user = JSON.parse(localStorage.getItem("user")); 
 
-  useEffect(() => {
-    fetchShops();
-  }, []);
+  // avoids fetching before token exists, preventing unauthorized errors and ensuring shops load correctly after login. This is crucial for a smooth user experience, especially when navigating directly to the shops page after authentication.
+const { token } = useContext(AuthContext);
+
+useEffect(() => {
+  if (token) {
+    fetchOrders();
+  }
+}, [token]);
+
+  // useEffect(() => {
+  //   fetchShops();
+  // }, []);
 
   const fetchShops = async () => {
     const data = await getShops();

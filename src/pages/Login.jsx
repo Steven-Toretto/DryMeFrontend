@@ -49,14 +49,14 @@ function Login() {
 
       setSuccess("Login successful! Redirecting...");
 
-      // ✅ Redirect by role
-      setTimeout(() => {
-        if (res.role === "owner") {
-          navigate("/dashboard");
-        } else {
-          navigate("/shops");
-        }
-      }, 500);
+      // ✅ Redirect by role HERE
+      // setTimeout(() => {
+      //   if (res.role === "owner") {
+      //     navigate("/dashboard");
+      //   } else {
+      //     navigate("/shops");
+      //   }
+      // }, 500);
 
     } catch (err) {
       console.error("LOGIN ERROR:", err);
