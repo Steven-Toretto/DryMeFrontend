@@ -1,21 +1,25 @@
 import axios from "axios";
 
 // ============================
-// BASE API
+// 🌍 BASE URL
+// ============================
+const BASE_URL = import.meta.env.VITE_API_URL;
+
+// ============================
+// 🚀 API INSTANCE
 // ============================
 const API = axios.create({
-  baseURL: `${import.meta.env.VITE_API_URL}/api/`,
+  baseURL: `${BASE_URL}/api/`,
 });
 
 // ============================
-// 🔐 REQUEST INTERCEPTOR (ATTACH ACCESS TOKEN)
+// 🔐 ATTACH ACCESS TOKEN
 // ============================
 API.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("access");
 
     if (token) {
-      config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
     }
 
@@ -25,7 +29,7 @@ API.interceptors.request.use(
 );
 
 // ============================
-// 🔁 RESPONSE INTERCEPTOR (AUTO REFRESH TOKEN)
+// 🔁 AUTO REFRESH TOKEN
 // ============================
 API.interceptors.response.use(
   (response) => response,
@@ -33,6 +37,7 @@ API.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // prevent infinite retry loop
     if (
       error.response?.status === 401 &&
       !originalRequest._retry
@@ -43,32 +48,43 @@ API.interceptors.response.use(
         const refresh = localStorage.getItem("refresh");
 
         if (!refresh) {
-          return Promise.reject(error);
+          throw error;
         }
 
-        const res = await axios.post(
-          `${import.meta.env.VITE_API_URL}/api/token/refresh/`,
-          { refresh }
+        const response = await axios.post(
+          `${BASE_URL}/api/token/refresh/`,
+          {
+            refresh,
+          }
         );
 
-        const newAccess = res.data.access;
+        const newAccess = response.data.access;
 
+        // save new access token
         localStorage.setItem("access", newAccess);
 
-        // update headers
-        API.defaults.headers.common.Authorization = `Bearer ${newAccess}`;
-        originalRequest.headers.Authorization = `Bearer ${newAccess}`;
+        // update axios headers
+        API.defaults.headers.common[
+          "Authorization"
+        ] = `Bearer ${newAccess}`;
 
+        originalRequest.headers[
+          "Authorization"
+        ] = `Bearer ${newAccess}`;
+
+        // retry failed request
         return API(originalRequest);
-      } catch (err) {
-        // refresh failed → logout user
+
+      } catch (refreshError) {
+
+        // logout if refresh fails
         localStorage.removeItem("access");
         localStorage.removeItem("refresh");
         localStorage.removeItem("user");
 
         window.location.href = "/login";
 
-        return Promise.reject(err);
+        return Promise.reject(refreshError);
       }
     }
 
@@ -85,7 +101,10 @@ export const registerUser = async (data) => {
   return res.data;
 };
 
-export const loginUser = async (username, password) => {
+export const loginUser = async (
+  username,
+  password
+) => {
   const res = await API.post("login/", {
     username,
     password,
@@ -104,22 +123,45 @@ export const getShops = async () => {
 };
 
 export const createShop = async (data) => {
-  const res = await API.post("shops/", data, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+
+  const res = await API.post(
+    "shops/",
+    data,
+    {
+      headers: {
+        "Content-Type":
+          "multipart/form-data",
+      },
+    }
+  );
+
+  return res.data;
+};
+
+export const updateShop = async (
+  id,
+  data
+) => {
+
+  const res = await API.put(
+    `shops/${id}/`,
+    data,
+    {
+      headers: {
+        "Content-Type":
+          "multipart/form-data",
+      },
+    }
+  );
 
   return res.data;
 };
 
 export const deleteShop = async (id) => {
-  const res = await API.delete(`shops/${id}/`);
-  return res.data;
-};
+  const res = await API.delete(
+    `shops/${id}/`
+  );
 
-export const updateShop = async (id, data) => {
-  const res = await API.put(`shops/${id}/`, data);
   return res.data;
 };
 
@@ -127,7 +169,10 @@ export const updateShop = async (id, data) => {
 // 🧺 SERVICES
 // ============================
 
-export const getServices = async (shopId = null) => {
+export const getServices = async (
+  shopId = null
+) => {
+
   let url = "services/";
 
   if (shopId) {
@@ -135,11 +180,19 @@ export const getServices = async (shopId = null) => {
   }
 
   const res = await API.get(url);
+
   return res.data;
 };
 
-export const createService = async (data) => {
-  const res = await API.post("services/", data);
+export const createService = async (
+  data
+) => {
+
+  const res = await API.post(
+    "services/",
+    data
+  );
+
   return res.data;
 };
 
@@ -152,32 +205,54 @@ export const getOrders = async () => {
   return res.data;
 };
 
-export const getOwnerOrders = async () => {
-  const res = await API.get("owner/orders/");
+export const getOwnerOrders =
+  async () => {
+
+    const res = await API.get(
+      "owner/orders/"
+    );
+
+    return res.data;
+  };
+
+export const createOrder = async (
+  data
+) => {
+
+  const res = await API.post(
+    "orders/",
+    data
+  );
+
   return res.data;
 };
 
-export const createOrder = async (data) => {
-  const res = await API.post("orders/", data);
-  return res.data;
-};
+export const updateOrderStatus =
+  async (id, status) => {
 
-export const updateOrderStatus = async (id, status) => {
-  const res = await API.put(`orders/${id}/status/`, {
-    status,
-  });
+    const res = await API.put(
+      `orders/${id}/status/`,
+      {
+        status,
+      }
+    );
 
-  return res.data;
-};
+    return res.data;
+  };
 
 // ============================
 // ⭐ FEATURED SHOPS
 // ============================
 
-export const getFeaturedShops = async () => {
-  const res = await API.get("featured-shops/");
-  return res.data;
-};
+export const getFeaturedShops =
+  async () => {
+
+    const res = await API.get(
+      "featured-shops/"
+    );
+
+    return res.data;
+  };
 
 export default API;
 
@@ -186,14 +261,17 @@ export default API;
 
 // import axios from "axios";
 
+
+// // ============================
+// // BASE API
+// // ============================
 // const API = axios.create({
 //   baseURL: `${import.meta.env.VITE_API_URL}/api/`,
 // });
 
 // // ============================
-// // 🔐 ATTACH TOKEN TO EVERY REQUEST
+// // 🔐 REQUEST INTERCEPTOR (ATTACH ACCESS TOKEN)
 // // ============================
-
 // API.interceptors.request.use(
 //   (config) => {
 //     const token = localStorage.getItem("access");
@@ -206,6 +284,58 @@ export default API;
 //     return config;
 //   },
 //   (error) => Promise.reject(error)
+// );
+
+// // ============================
+// // 🔁 RESPONSE INTERCEPTOR (AUTO REFRESH TOKEN)
+// // ============================
+// API.interceptors.response.use(
+//   (response) => response,
+
+//   async (error) => {
+//     const originalRequest = error.config;
+
+//     if (
+//       error.response?.status === 401 &&
+//       !originalRequest._retry
+//     ) {
+//       originalRequest._retry = true;
+
+//       try {
+//         const refresh = localStorage.getItem("refresh");
+
+//         if (!refresh) {
+//           return Promise.reject(error);
+//         }
+
+//         const res = await axios.post(
+//           `${import.meta.env.VITE_API_URL}/api/token/refresh/`,
+//           { refresh }
+//         );
+
+//         const newAccess = res.data.access;
+
+//         localStorage.setItem("access", newAccess);
+
+//         // update headers
+//         API.defaults.headers.common.Authorization = `Bearer ${newAccess}`;
+//         originalRequest.headers.Authorization = `Bearer ${newAccess}`;
+
+//         return API(originalRequest);
+//       } catch (err) {
+//         // refresh failed → logout user
+//         localStorage.removeItem("access");
+//         localStorage.removeItem("refresh");
+//         localStorage.removeItem("user");
+
+//         window.location.href = "/login";
+
+//         return Promise.reject(err);
+//       }
+//     }
+
+//     return Promise.reject(error);
+//   }
 // );
 
 // // ============================
@@ -314,131 +444,5 @@ export default API;
 // export default API;
 
 
-// import axios from "axios";
-
-// const API = axios.create({
-//   baseURL: import.meta.env.VITE_API_URL,
-//   baseURL: "http://127.0.0.1:8000/api/",
-// });
-
-// // ============================
-// // 🔐 ATTACH TOKEN TO EVERY REQUEST
-// // ============================
-// API.interceptors.request.use(
-//   (config) => {
-//     const token = localStorage.getItem("access");
-
-//     if (token) {
-//       config.headers = config.headers || {};
-//       config.headers.Authorization = `Bearer ${token}`;
-//     }
-
-//     return config;
-//   },
-//   (error) => Promise.reject(error)
-// );
-
-// // ============================
-// // 🔐 AUTH
-// // ============================
-
-// export const registerUser = async (data) => {
-//   const res = await API.post("register/", data);
-//   return res.data;
-// };
-
-// export const loginUser = async (username, password) => {
-//   const res = await API.post("login/", {
-//     username,
-//     password,
-//   });
-
-//   // ❌ REMOVE token storage from here
-//   // ✅ Let Login.jsx handle storage
-
-//   return res.data;
-// };
-
-// // ============================
-// // 🏪 SHOPS
-// // ============================
 
 
-// export const getShops = async () => {
-//   const res = await API.get("shops/");
-//   return res.data;
-// };
-
-// export const createShop = async (data) => {
-//   const res = await API.post("shops/", data, {
-//     headers: {
-//       "Content-Type": "multipart/form-data",
-//     },
-//   });
-//   return res.data;
-// };
-
-// export const deleteShop = async (id) => {
-//   const res = await API.delete(`shops/${id}/`);
-//   return res.data;
-// };
-
-// export const updateShop = async (id, data) => {
-//   const res = await API.put(`shops/${id}/`, data);
-//   return res.data; // ✅ FIXED
-// };
-
-// // ============================
-// // 🧺 SERVICES
-// // ============================
-
-// export const getServices = async (shopId = null) => {
-//   let url = "services/";
-
-//   if (shopId) {
-//     url += `?shop=${shopId}`;
-//   }
-
-//   const res = await API.get(url);
-//   return res.data;
-// };
-
-// export const createService = async (data) => {
-//   const res = await API.post("services/", data);
-//   return res.data;
-// };
-
-// // ============================
-// // 📦 ORDERS
-// // ============================
-
-// export const getOrders = async () => {
-//   const res = await API.get("orders/");
-//   return res.data;
-// };
-
-// export const getOwnerOrders = async () => {
-//   const res = await API.get("owner/orders/");
-//   return res.data;
-// };
-
-// export const createOrder = async (data) => {
-//   const res = await API.post("orders/", data);
-//   return res.data;
-// };
-
-// export const updateOrderStatus = async (id, status) => {
-//   const res = await API.put(`orders/${id}/status/`, { status });
-//   return res.data;
-// };
-
-// // ============================
-// // ⭐ FEATURED SHOPS
-// // ============================
-
-// export const getFeaturedShops = async () => {
-//   const res = await API.get("featured-shops/");
-//   return res.data;
-// };
-
-// export default API;
