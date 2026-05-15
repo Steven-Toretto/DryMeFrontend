@@ -1,89 +1,169 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { getShops, deleteShop } from "../api";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { FaMapMarkerAlt } from "react-icons/fa";
-import {Link} from "react-router-dom"
-import { User } from "lucide-react";
 
-import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 
 function Shops() {
+
   const [shops, setShops] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const navigate = useNavigate();
 
-  const user = JSON.parse(localStorage.getItem("user")); 
+  // ✅ USE AUTH CONTEXT INSTEAD OF DIRECT localStorage
+  const { token, user } = useContext(AuthContext);
 
-  // avoids fetching before token exists, preventing unauthorized errors and ensuring shops load correctly after login. This is crucial for a smooth user experience, especially when navigating directly to the shops page after authentication.
-const { token } = useContext(AuthContext);
+  // =========================
+  // ✅ WAIT FOR TOKEN
+  // =========================
+  useEffect(() => {
 
-useEffect(() => {
-  if (token) {
-    fetchOrders();
-  }
-}, [token]);
+    // Wait until auth loads
+    if (token === undefined) return;
 
-  // useEffect(() => {
-  //   fetchShops();
-  // }, []);
+    // If logged in, fetch shops
+    if (token) {
+      fetchShops();
 
+    } else {
+      // Optional:
+      // fetchShops(); // uncomment if shops should be public
+      setLoading(false);
+    }
+
+  }, [token]);
+
+  // =========================
+  // FETCH SHOPS
+  // =========================
   const fetchShops = async () => {
-    const data = await getShops();
-    setShops(data);
+
+    try {
+
+      setLoading(true);
+
+      const data = await getShops();
+
+      setShops(data);
+
+    } catch (error) {
+
+      console.error("Fetch shops error:", error);
+
+    } finally {
+
+      setLoading(false);
+    }
   };
 
-  //  DELETE SHOP
+  // =========================
+  // DELETE SHOP
+  // =========================
   const handleDelete = async (id) => {
-    const confirmDelete = window.confirm("Delete this shop?");
+
+    const confirmDelete = window.confirm(
+      "Delete this shop?"
+    );
+
     if (!confirmDelete) return;
 
     try {
+
       await deleteShop(id);
-      setShops(shops.filter((shop) => shop.id !== id));
+
+      setShops(
+        shops.filter((shop) => shop.id !== id)
+      );
+
     } catch (err) {
+
+      console.error(err);
+
       alert("Failed to delete shop");
     }
   };
 
+  // =========================
+  // LOADING
+  // =========================
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-500">
+          Loading shops...
+        </p>
+      </div>
+    );
+  }
+
+  // =========================
+  // NOT LOGGED IN
+  // =========================
+  if (!user) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center px-4 text-center">
+        <Link
+          to="/login"
+          className="text-gray-600"
+        >
+          <span className="text-blue-600 font-semibold">
+            Login
+          </span>{" "}
+          to view available laundry shops
+        </Link>
+      </div>
+    );
+  }
+
+  // =========================
+  // NO SHOPS
+  // =========================
+  if (shops.length === 0) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <p className="text-gray-500">
+          No available laundry shops
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
+
       {/* Header */}
       <div className="flex items-center justify-between mb-8 max-w-6xl mx-auto">
+
         <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
           Laundry Shops
         </h2>
+
       </div>
 
       {/* Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+
         {shops.map((shop) => {
+
           const isOwner =
-            user?.role === "owner" && user?.username === shop.owner;
-
-          if(!user){
-            return(
-              <div className="min-h-[50vh] items-center justify-center">
-                <Link to="/login" className="text-gray-500"> <span text-blue-500>Login</span> to view available laundry shops</Link>
-              </div>
-            );
-          }
-
-          if(shops.length === 0){
-            return(
-              <div className="min-h-[50vh] flex items-center justify-center">
-                <p className="text-gray-500">No available laundry shops</p>
-              </div>
-            );
-          }
+            user?.role === "owner" &&
+            user?.username === shop.owner;
 
           return (
+
             <div
               key={shop.id}
-              onClick={() => navigate(`/shop/${shop.id}`)}
+              onClick={() =>
+                navigate(`/shop/${shop.id}`)
+              }
               className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition duration-300 overflow-hidden cursor-pointer flex flex-col"
             >
-              {/* Image */}
+
+              {/* IMAGE */}
               <div className="relative h-44 overflow-hidden">
+
                 <img
                   src={
                     shop.image
@@ -98,45 +178,58 @@ useEffect(() => {
                   Featured
                 </span>
 
-                {/* Owner Controls */}
+                {/* OWNER CONTROLS */}
                 {isOwner && (
+
                   <div
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e) =>
+                      e.stopPropagation()
+                    }
                     className="absolute top-3 right-3 flex gap-2"
                   >
+
                     <button
-                      onClick={() => navigate(`/edit-shop/${shop.id}`)}
+                      onClick={() =>
+                        navigate(`/edit-shop/${shop.id}`)
+                      }
                       className="bg-white text-blue-600 px-2 py-1 rounded text-xs shadow hover:bg-gray-100"
                     >
                       Edit
                     </button>
 
                     <button
-                      onClick={() => handleDelete(shop.id)}
+                      onClick={() =>
+                        handleDelete(shop.id)
+                      }
                       className="bg-white text-red-600 px-2 py-1 rounded text-xs shadow hover:bg-gray-100"
                     >
                       Delete
                     </button>
+
                   </div>
                 )}
+
               </div>
 
-              {/* Content */}
+              {/* CONTENT */}
               <div className="p-4 flex flex-col flex-1">
+
                 <h3 className="font-bold text-lg text-gray-900 line-clamp-1">
                   {shop.name}
                 </h3>
 
                 <p className="flex gap-1 text-gray-500 text-sm mt-1">
-                  <FaMapMarkerAlt className="text-red-400" /> {shop.location}
+                  <FaMapMarkerAlt className="text-red-400" />
+                  {shop.location}
                 </p>
 
                 <p className="text-gray-600 text-sm mt-2 line-clamp-2 flex-1">
                   {shop.description}
                 </p>
 
-                {/* Actions */}
+                {/* ACTIONS */}
                 <div className="mt-4 flex gap-2">
+
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -156,12 +249,17 @@ useEffect(() => {
                   >
                     Book
                   </button>
+
                 </div>
+
               </div>
+
             </div>
           );
         })}
+
       </div>
+
     </div>
   );
 }
@@ -170,113 +268,185 @@ export default Shops;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 // import { useEffect, useState } from "react";
-// import { getShops } from "../api";
+// import { getShops, deleteShop } from "../api";
 // import { useNavigate } from "react-router-dom";
+// import { FaMapMarkerAlt } from "react-icons/fa";
+// import {Link} from "react-router-dom"
+// import { User } from "lucide-react";
+
+// import { useContext } from "react";
+// import { AuthContext } from "../context/AuthContext";
 
 // function Shops() {
 //   const [shops, setShops] = useState([]);
-//   const navigate = useNavigate(); // navigation hook
+//   const navigate = useNavigate();
 
-//   useEffect(() => {
-//     fetchShops();
-//   }, []);
+//   const user = JSON.parse(localStorage.getItem("user")); 
+
+//   // avoids fetching before token exists, preventing unauthorized errors and ensuring shops load correctly after login. This is crucial for a smooth user experience, especially when navigating directly to the shops page after authentication.
+// const { token } = useContext(AuthContext);
+
+// useEffect(() => {
+//   if (token) {
+//     fetchOrders();
+//   }
+// }, [token]);
+
+//   // useEffect(() => {
+//   //   fetchShops();
+//   // }, []);
 
 //   const fetchShops = async () => {
 //     const data = await getShops();
 //     setShops(data);
 //   };
 
+//   //  DELETE SHOP
+//   const handleDelete = async (id) => {
+//     const confirmDelete = window.confirm("Delete this shop?");
+//     if (!confirmDelete) return;
+
+//     try {
+//       await deleteShop(id);
+//       setShops(shops.filter((shop) => shop.id !== id));
+//     } catch (err) {
+//       alert("Failed to delete shop");
+//     }
+//   };
+
 //   return (
-//     <div className="p-6">
-//       {/* Header matching screenshot */}
-//       <div className="flex items-center justify-between mb-6 max-w-6xl mx-auto">
-//         <h2 className="text-2xl font-extrabold text-gray-900">Available Laundry Shops</h2>
+//     <div className="p-6 bg-gray-50 min-h-screen">
+//       {/* Header */}
+//       <div className="flex items-center justify-between mb-8 max-w-6xl mx-auto">
+//         <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+//           Laundry Shops
+//         </h2>
 //       </div>
 
-//       {/* Flexbox layout (cards side-by-side) */}
-//       <div className="flex flex-wrap justify-center bg-gray-100 p-5 gap-6">
-//         {shops.map((shop) => (
-//           <div
-//             key={shop.id}
-//             onClick={() => navigate(`/shop/${shop.id}`)} // CLICK NAVIGATION
-//             className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition transform hover:-translate-y-1 flex flex-col w-full sm:w-[48%] md:w-[32%] lg:w-[30%] max-w-sm"
-//             aria-label={`Open ${shop.name} shop page`}
-//           >
-//             {/* Image */}
-//             <div className="relative w-full h-48 overflow-hidden bg-gray-100">
-//               <img
-//                 src={
-//                   shop.image
-//                     ? shop.image
-//                     : "https://via.placeholder.com/600x400?text=No+Image"
-//                 }
-//                 alt={shop.name}
-//                 className="w-full h-full object-cover"
-//               />
+//       {/* Grid */}
+//       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+//         {shops.map((shop) => {
+//           const isOwner =
+//             user?.role === "owner" && user?.username === shop.owner;
 
-//               {/* "New" label top-right like screenshot */}
-//               <span className="absolute right-3 top-3 bg-white text-xs text-gray-800 px-2 py-1 rounded-full font-semibold shadow-sm">
-//                 New
-//               </span>
-//             </div>
+//           if(!user){
+//             return(
+//               <div className="min-h-[50vh] items-center justify-center">
+//                 <Link to="/login" className="text-gray-500"> <span text-blue-500>Login</span> to view available laundry shops</Link>
+//               </div>
+//             );
+//           }
 
-//             {/* Content */}
-//             <div className="p-4 flex-1 flex flex-col">
-//               <h3 className="font-bold text-lg text-gray-900 line-clamp-2">
-//                 {shop.name}
-//               </h3>
+//           if(shops.length === 0){
+//             return(
+//               <div className="min-h-[50vh] flex items-center justify-center">
+//                 <p className="text-gray-500">No available laundry shops</p>
+//               </div>
+//             );
+//           }
 
-//               {/* location in lowercase like screenshot */}
-//               <p className="text-gray-500 text-sm mt-1 lowercase">
-//                 {shop.location}
-//               </p>
+//           return (
+//             <div
+//               key={shop.id}
+//               onClick={() => navigate(`/shop/${shop.id}`)}
+//               className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition duration-300 overflow-hidden cursor-pointer flex flex-col"
+//             >
+//               {/* Image */}
+//               <div className="relative h-44 overflow-hidden">
+//                 <img
+//                   src={
+//                     shop.image
+//                       ? shop.image
+//                       : "https://via.placeholder.com/600x400?text=No+Image"
+//                   }
+//                   alt={shop.name}
+//                   className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+//                 />
 
-//               <p className="text-gray-700 mt-3 text-sm flex-1 line-clamp-3">
-//                 {shop.description}
-//               </p>
+//                 <span className="absolute top-3 left-3 bg-blue-600 text-white text-xs px-2 py-1 rounded-full shadow">
+//                   Featured
+//                 </span>
 
-//               {/* Two buttons exactly as in screenshot */}
-//               <div className="mt-4 flex gap-3">
-//                 <button
-//                   onClick={(e) => {
-//                     e.stopPropagation();
-//                     navigate(`/shop/${shop.id}`);
-//                   }}
-//                   className="flex-1 bg-blue-600 text-white py-2 rounded font-semibold hover:bg-blue-700 transition text-sm"
-//                   aria-label={`View ${shop.name}`}
-//                 >
-//                   View Shop
-//                 </button>
+//                 {/* Owner Controls */}
+//                 {isOwner && (
+//                   <div
+//                     onClick={(e) => e.stopPropagation()}
+//                     className="absolute top-3 right-3 flex gap-2"
+//                   >
+//                     <button
+//                       onClick={() => navigate(`/edit-shop/${shop.id}`)}
+//                       className="bg-white text-blue-600 px-2 py-1 rounded text-xs shadow hover:bg-gray-100"
+//                     >
+//                       Edit
+//                     </button>
 
-//                 <button
-//                   onClick={(e) => {
-//                     e.stopPropagation();
-//                     navigate(`/shop/${shop.id}#book`);
-//                   }}
-//                   className="flex-1 bg-white border border-gray-200 text-gray-700 py-2 rounded font-semibold hover:bg-gray-50 transition text-sm"
-//                   aria-label={`Book at ${shop.name}`}
-//                 >
-//                   Book Now
-//                 </button>
+//                     <button
+//                       onClick={() => handleDelete(shop.id)}
+//                       className="bg-white text-red-600 px-2 py-1 rounded text-xs shadow hover:bg-gray-100"
+//                     >
+//                       Delete
+//                     </button>
+//                   </div>
+//                 )}
+//               </div>
+
+//               {/* Content */}
+//               <div className="p-4 flex flex-col flex-1">
+//                 <h3 className="font-bold text-lg text-gray-900 line-clamp-1">
+//                   {shop.name}
+//                 </h3>
+
+//                 <p className="flex gap-1 text-gray-500 text-sm mt-1">
+//                   <FaMapMarkerAlt className="text-red-400" /> {shop.location}
+//                 </p>
+
+//                 <p className="text-gray-600 text-sm mt-2 line-clamp-2 flex-1">
+//                   {shop.description}
+//                 </p>
+
+//                 {/* Actions */}
+//                 <div className="mt-4 flex gap-2">
+//                   <button
+//                     onClick={(e) => {
+//                       e.stopPropagation();
+//                       navigate(`/shop/${shop.id}`);
+//                     }}
+//                     className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition text-sm"
+//                   >
+//                     View
+//                   </button>
+
+//                   <button
+//                     onClick={(e) => {
+//                       e.stopPropagation();
+//                       navigate(`/shop/${shop.id}#book`);
+//                     }}
+//                     className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-100 transition text-sm"
+//                   >
+//                     Book
+//                   </button>
+//                 </div>
 //               </div>
 //             </div>
-//           </div>
-//         ))}
+//           );
+//         })}
 //       </div>
 //     </div>
 //   );
 // }
 
 // export default Shops;
+
+
+
+
+
+
+
+
+
+
+
+
+
