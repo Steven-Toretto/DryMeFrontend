@@ -180,15 +180,16 @@ function Content() {
             {shops.map((shop) => (
               <div key={shop.id} className="bg-white rounded-2xl shadow-sm overflow-hidden flex flex-col hover:shadow-md transition w-full sm:w-1/2 md:w-1/3 lg:w-1/4">
                 <div className="relative h-48">
-                  <img
-                    src={shop.image ? `http://127.0.0.1:8000${shop.image}` : laundryImg}
-                    alt={shop.name}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute right-4 top-4 bg-white/90 px-3 py-1 rounded-full text-xs font-semibold text-gray-800">
-                    {shop.rating ? `${shop.rating} ★` : "New"}
-                  </div>
-                </div>
+  <img
+    src={shop.image || laundryImg}
+    alt={shop.name}
+    className="w-full h-full object-cover"
+  />
+
+  <div className="absolute right-4 top-4 bg-white/90 px-3 py-1 rounded-full text-xs font-semibold text-gray-800">
+    {shop.rating ? `${shop.rating} ★` : "New"}
+  </div>
+</div>
 
                 <div className="p-5 flex-1 flex flex-col">
                   <h3 className="font-bold text-lg text-gray-900">{shop.name}</h3>
