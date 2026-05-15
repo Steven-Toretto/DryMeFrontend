@@ -338,7 +338,7 @@ const Dashboard = () => {
       {/* MAIN */}
       <main className="flex-1 md:ml-72 p-6">
 
-        <div className="md:hidden flex items-center justify-between mb-4 bg-white p-3 rounded-xl shadow-sm">
+        {/* <div className="md:hidden flex items-center justify-between mb-4 bg-white p-3 rounded-xl shadow-sm">
   <h2 className="font-bold text-gray-800">
     DRYME
   </h2>
@@ -349,8 +349,13 @@ const Dashboard = () => {
   >
     Logout
   </button>
-</div>
-
+</div> */}
+<button
+  onClick={handleLogout}
+  className="md:hidden fixed bottom-5 right-5 bg-red-600 text-white p-3 rounded-full shadow-lg"
+>
+  <LogOut size={18} />
+</button>
         {/* HEADER */}
         <div className="mb-8">
 
