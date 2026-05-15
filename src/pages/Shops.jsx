@@ -164,15 +164,17 @@ function Shops() {
               {/* IMAGE */}
               <div className="relative h-44 overflow-hidden">
 
-                <img
-  src={
-    shop.image
-      ? shop.image
-      : "https://images.unsplash.com/photo-1521656693074-0ef32e80a5d5?q=80&w=1200&auto=format&fit=crop"
-  }
-  alt={shop.name}
-  className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-/>
+                {shop.image ? (
+  <img
+    src={shop.image}
+    alt={shop.name}
+    className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+  />
+) : (
+  <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-500 text-sm">
+    No Image
+  </div>
+)}
 
                 <span className="absolute top-3 left-3 bg-blue-600 text-white text-xs px-2 py-1 rounded-full shadow">
                   Featured
