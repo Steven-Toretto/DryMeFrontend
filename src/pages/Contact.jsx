@@ -152,7 +152,7 @@ function Contact() {
                     <FaTwitter className="w-5 h-5" />
                   </a>
                   <a
-                    href="https://www.youtube.com/yourchannel"
+                    href="https://www.youtube.com/https://dry-me-frontend.vercel.app/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="p-2 rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition"
