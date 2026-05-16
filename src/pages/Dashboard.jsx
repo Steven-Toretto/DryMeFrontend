@@ -755,7 +755,7 @@ const Dashboard = () => {
                   className="w-full text-sm"
                 />
 
-              </div>
+              </div> 
 
               <button
                 type="submit"
