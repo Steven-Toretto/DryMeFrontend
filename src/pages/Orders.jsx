@@ -32,14 +32,25 @@ const role = user?.role;
 const { token } = useContext(AuthContext);
 
 useEffect(() => {
-  if (token) {
-    fetchOrders();
-  }
-}, [token]);
 
-  // useEffect(() => {
-  //   fetchOrders();
-  // }, []);
+  fetchOrders();
+
+  // AUTO REFRESH EVERY 5 SECONDS
+  const interval = setInterval(() => {
+    fetchOrders();
+  }, 5000);
+
+  // CLEANUP
+  return () => clearInterval(interval);
+
+}, []);
+
+// useEffect(() => {
+//   if (token) {
+//     fetchOrders();
+//   }
+// }, [token]);
+
 
   const handleStatusUpdate = async (id, status) => {
     try {

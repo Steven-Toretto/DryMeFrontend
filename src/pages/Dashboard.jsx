@@ -55,23 +55,50 @@ const Dashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // =========================
-  // AUTH + FETCH
+  // AUtO + FETCH
   // =========================
+
   useEffect(() => {
-    if (token === undefined) return;
 
-    if (!token) {
-      navigate("/login");
-      return;
-    }
+  if (token === undefined) return;
 
-    if (role !== "owner") {
-      navigate("/shops");
-      return;
-    }
+  if (!token) {
+    navigate("/login");
+    return;
+  }
 
+  if (role !== "owner") {
+    navigate("/shops");
+    return;
+  }
+
+  // INITIAL FETCH
+  fetchAll();
+
+  // AUTO REFRESH
+  const interval = setInterval(() => {
     fetchAll();
-  }, [token, role]);
+  }, 5000);
+
+  return () => clearInterval(interval);
+
+}, [token, role]);
+
+  // useEffect(() => {
+  //   if (token === undefined) return;
+
+  //   if (!token) {
+  //     navigate("/login");
+  //     return;
+  //   }
+
+  //   if (role !== "owner") {
+  //     navigate("/shops");
+  //     return;
+  //   }
+
+  //   fetchAll();
+  // }, [token, role]);
 
   // =========================
   // FETCH EVERYTHING
