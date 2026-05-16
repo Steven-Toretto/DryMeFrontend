@@ -20,6 +20,7 @@ import {
   Tag,
   LogOut,
   Image as ImageIcon,
+  Menu,X,
 } from "lucide-react";
 
 import { AuthContext } from "../context/AuthContext";
@@ -50,6 +51,8 @@ const Dashboard = () => {
 
   const [shopMessage, setShopMessage] = useState("");
   const [serviceMessage, setServiceMessage] = useState("");
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // =========================
   // AUTH + FETCH
@@ -336,26 +339,148 @@ const Dashboard = () => {
       </aside>
 
       {/* MAIN */}
-      <main className="flex-1 md:ml-72 p-6">
+      <main className="flex-1 md:ml-72 pt-20 md:pt-0">
 
-        {/* <div className="md:hidden flex items-center justify-between mb-4 bg-white p-3 rounded-xl shadow-sm">
-  <h2 className="font-bold text-gray-800">
-    DRYME
-  </h2>
+        {/* MOBILE TOPBAR */}
+<div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-blue-600 text-white flex items-center justify-between px-4 py-3 shadow-lg">
+  <div className="flex items-center gap-2">
+    <Store size={22} />
+    <h1 className="font-bold text-lg">DRYME</h1>
+  </div>
 
   <button
-    onClick={handleLogout}
-    className="bg-red-600 text-white px-3 py-2 rounded-lg text-sm"
+    onClick={() => setSidebarOpen(true)}
+    className="p-2 rounded-lg hover:bg-white/10"
   >
-    Logout
+    <Menu size={24} />
   </button>
-</div> */}
-<button
+</div>
+
+{/* MOBILE OVERLAY */}
+{sidebarOpen && (
+  <div
+    onClick={() => setSidebarOpen(false)}
+    className="fixed inset-0 bg-black/50 z-40 md:hidden"
+  />
+)}
+
+{/* SIDEBAR */}
+<aside
+  className={`
+    fixed inset-y-0 left-0 z-50 w-72 bg-blue-600 text-white
+    transform transition-transform duration-300 overflow-y-auto
+
+    ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+
+    md:translate-x-0 md:flex
+  `}
+>
+  <div className="p-6 flex flex-col min-h-screen">
+
+    {/* MOBILE CLOSE */}
+    <div className="md:hidden flex justify-end mb-4">
+      <button
+        onClick={() => setSidebarOpen(false)}
+        className="p-2 rounded-lg hover:bg-white/10"
+      >
+        <X size={24} />
+      </button>
+    </div>
+
+    {/* BRAND */}
+    <div className="flex items-center gap-3 mb-8">
+      <div className="bg-white/10 p-2 rounded">
+        <Store size={22} />
+      </div>
+
+      <div>
+        <h2 className="text-2xl font-bold">
+          DRYME
+        </h2>
+
+        <p className="text-sm text-white/80">
+          Admin Dashboard
+        </p>
+      </div>
+    </div>
+
+    {/* NAVIGATION */}
+    <nav className="flex-1">
+      <ul className="space-y-2">
+
+        <li>
+          <Link
+            to="/dashboard"
+            onClick={() => setSidebarOpen(false)}
+            className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition"
+          >
+            <Home size={18} />
+            Dashboard
+          </Link>
+        </li>
+
+        <li>
+          <Link
+            to="/orders"
+            onClick={() => setSidebarOpen(false)}
+            className="flex items-center justify-between px-4 py-3 rounded-lg hover:bg-white/10 transition"
+          >
+            <div className="flex items-center gap-3">
+              <ShoppingCart size={18} />
+              Orders
+            </div>
+
+            <span className="bg-white/10 px-2 py-1 rounded-full text-xs">
+              {orders.length}
+            </span>
+          </Link>
+        </li>
+
+        <li>
+          <Link
+            to="/shops"
+            onClick={() => setSidebarOpen(false)}
+            className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition"
+          >
+            <Store size={18} />
+            Shops
+          </Link>
+        </li>
+
+        <li>
+          <Link
+            to="/services"
+            onClick={() => setSidebarOpen(false)}
+            className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition"
+          >
+            <Tag size={18} />
+            Services
+          </Link>
+        </li>
+
+      </ul>
+    </nav>
+
+    {/* LOGOUT */}
+    <button
+      onClick={handleLogout}
+      className="mt-6 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 px-4 py-3 rounded-lg transition"
+    >
+      <LogOut size={18} />
+      Logout
+    </button>
+
+  </div>
+</aside>
+
+
+
+{/* <button
   onClick={handleLogout}
   className="md:hidden fixed bottom-5 right-5 bg-red-600 text-white p-3 rounded-full shadow-lg"
 >
   <LogOut size={18} />
-</button>
+</button> */}
         {/* HEADER */}
         <div className="mb-8">
 
