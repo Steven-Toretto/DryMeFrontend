@@ -54,31 +54,25 @@ const Dashboard = () => {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // =========================
-  // AUtO + FETCH
-  // =========================
+// =========================
+// AUTO REFRESH ORDERS ONLY
+// =========================
+useEffect(() => {
 
-  useEffect(() => {
+  // only owners
+  if (!token || role !== "owner") return;
 
-  if (token === undefined) return;
+  const interval = setInterval(async () => {
+    try {
+      const updatedOrders = await getOwnerOrders();
 
-  if (!token) {
-    navigate("/login");
-    return;
-  }
+      // update only orders state
+      setOrders(updatedOrders);
 
-  if (role !== "owner") {
-    navigate("/shops");
-    return;
-  }
-
-  // INITIAL FETCH
-  fetchAll();
-
-  // AUTO REFRESH
-  const interval = setInterval(() => {
-    fetchAll();
-  }, 5000);
+    } catch (error) {
+      console.error("Auto refresh failed:", error);
+    }
+  }, 5000); // every 5 seconds
 
   return () => clearInterval(interval);
 

@@ -33,14 +33,16 @@ const { token } = useContext(AuthContext);
 
 useEffect(() => {
 
-  fetchOrders();
+  const interval = setInterval(async () => {
+    try {
+      const data = await getOrders();
+      setOrders(data);
 
-  // AUTO REFRESH EVERY 5 SECONDS
-  const interval = setInterval(() => {
-    fetchOrders();
+    } catch (err) {
+      console.error(err);
+    }
   }, 5000);
 
-  // CLEANUP
   return () => clearInterval(interval);
 
 }, []);
