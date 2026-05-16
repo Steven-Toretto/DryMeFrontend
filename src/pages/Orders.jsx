@@ -1,124 +1,231 @@
-import { useEffect, useState } from "react";
-import { getOrders, getOwnerOrders, updateOrderStatus } from "../api";
- import { FaPhoneAlt } from "react-icons/fa";
-import { FaMapMarkerAlt } from "react-icons/fa";
-import {Link} from "react-router-dom"
+import { useEffect, useState, useContext } from "react";
+import {
+  getOrders,
+  getOwnerOrders,
+  updateOrderStatus,
+} from "../api";
 
-import { useContext } from "react";
+import { FaPhoneAlt, FaMapMarkerAlt } from "react-icons/fa";
+
+import { Link } from "react-router-dom";
+
 import { AuthContext } from "../context/AuthContext";
 
 function Orders() {
+
+  const { token, user } = useContext(AuthContext);
+
+  const role = user?.role;
+
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // const role = localStorage.getItem("role");
-  const user = JSON.parse(localStorage.getItem("user"));
-const role = user?.role;
+  // =========================
+  // FETCH ORDERS
+  // =========================
+  const fetchOrders = async (showLoader = true) => {
 
-  const fetchOrders = async () => {
     try {
+
+      // only show spinner on first load
+      if (showLoader) {
+        setLoading(true);
+      }
+
       const data =
-        role === "owner" ? await getOwnerOrders() : await getOrders();
+        role === "owner"
+          ? await getOwnerOrders()
+          : await getOrders();
+
       setOrders(data);
+
     } catch (error) {
-      console.error(" Failed:", error.response?.data || error.message);
+
+      console.error(
+        "Fetch failed:",
+        error.response?.data || error.message
+      );
+
     } finally {
-      setLoading(false);
+
+      if (showLoader) {
+        setLoading(false);
+      }
     }
   };
 
-  
-// avoids fetching before token exists, preventing unauthorized errors and ensuring orders load correctly after login. This is crucial for a smooth user experience, especially when navigating directly to the orders page after authentication.
-const { token } = useContext(AuthContext);
+  // =========================
+  // INITIAL FETCH
+  // =========================
+  useEffect(() => {
 
-useEffect(() => {
+    // prevents unauthorized fetch
+    if (!token || !role) return;
 
-  const interval = setInterval(async () => {
-    try {
-      const data = await getOrders();
-      setOrders(data);
+    fetchOrders(true);
 
-    } catch (err) {
-      console.error(err);
-    }
-  }, 5000);
+  }, [token, role]);
 
-  return () => clearInterval(interval);
+  // =========================
+  // AUTO REFRESH
+  // =========================
+  useEffect(() => {
 
-}, []);
+    if (!token || !role) return;
 
-// useEffect(() => {
-//   if (token) {
-//     fetchOrders();
-//   }
-// }, [token]);
+    const interval = setInterval(async () => {
 
+      try {
 
+        const data =
+          role === "owner"
+            ? await getOwnerOrders()
+            : await getOrders();
+
+        // refresh only orders state
+        setOrders(data);
+
+      } catch (error) {
+
+        console.error(
+          "Auto refresh failed:",
+          error.response?.data || error.message
+        );
+      }
+
+    }, 5000);
+
+    return () => clearInterval(interval);
+
+  }, [token, role]);
+
+  // =========================
+  // UPDATE STATUS
+  // =========================
   const handleStatusUpdate = async (id, status) => {
+
     try {
+
       await updateOrderStatus(id, status);
-      fetchOrders();
-    } catch (err) {
-      console.error(" Update error:", err.response?.data);
+
+      // refresh silently
+      fetchOrders(false);
+
+    } catch (error) {
+
+      console.error(
+        "Update error:",
+        error.response?.data || error.message
+      );
     }
   };
 
+  // =========================
+  // STATUS STYLES
+  // =========================
   const getStatusStyle = (status) => {
+
     switch (status) {
+
       case "completed":
         return "bg-green-100 text-green-700";
+
       case "washing":
         return "bg-yellow-100 text-yellow-700";
+
       default:
         return "bg-gray-100 text-gray-700";
     }
   };
 
+  // =========================
+  // LOADING
+  // =========================
   if (loading) {
+
     return (
       <div className="min-h-[50vh] flex items-center justify-center">
+
         <div className="animate-spin w-10 h-10 border-4 border-blue-300 border-t-transparent rounded-full" />
+
       </div>
     );
   }
 
+  // =========================
+  // EMPTY
+  // =========================
   if (orders.length === 0) {
+
     return (
       <div className="min-h-[50vh] flex items-center justify-center">
-        <Link to="/shops" className="text-gray-500">No orders yet <span className="text-blue-500">add</span> </Link> 
+
+        <Link
+          to="/shops"
+          className="text-gray-500"
+        >
+          No orders yet{" "}
+          <span className="text-blue-500">
+            add
+          </span>
+
+        </Link>
+
       </div>
     );
   }
 
+  // =========================
+  // UI
+  // =========================
   return (
+
     <div className="min-h-[80vh] bg-gray-100 py-10 px-4">
+
       <div className="max-w-5xl mx-auto">
+
         {/* HEADER */}
         <div className="flex justify-between items-center mb-8">
+
           <h2 className="text-3xl font-bold">
-            {role === "owner" ? "Shop Orders" : "My Orders"}
+
+            {role === "owner"
+              ? "Shop Orders"
+              : "My Orders"}
+
           </h2>
+
           <span className="text-gray-500 text-sm">
+
             {orders.length} orders
+
           </span>
+
         </div>
 
         {/* ORDER LIST */}
         <div className="space-y-5">
+
           {orders.map((order) => (
+
             <div
               key={order.id}
               className="bg-white rounded-2xl shadow hover:shadow-lg transition p-5"
             >
+
               {/* TOP ROW */}
               <div className="flex justify-between items-center">
+
                 <div>
+
                   <h3 className="font-semibold text-lg">
                     {order.service?.name}
                   </h3>
+
                   <p className="text-sm text-gray-500">
                     {order.shop?.name}
                   </p>
+
                 </div>
 
                 <span
@@ -128,26 +235,43 @@ useEffect(() => {
                 >
                   {order.status}
                 </span>
+
               </div>
 
               {/* DETAILS */}
               <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
+
                 <div>
-                  <p className="text-gray-500">Weight</p>
-                  <p className="font-semibold">{order.weight} kg</p>
+
+                  <p className="text-gray-500">
+                    Weight
+                  </p>
+
+                  <p className="font-semibold">
+                    {order.weight} kg
+                  </p>
+
                 </div>
 
                 <div>
-                  <p className="text-gray-500">Total</p>
+
+                  <p className="text-gray-500">
+                    Total
+                  </p>
+
                   <p className="font-semibold text-blue-600">
                     KES {order.total_price}
                   </p>
+
                 </div>
+
               </div>
 
               {/* OWNER VIEW */}
               {role === "owner" && (
+
                 <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
+
                   <p>
                     <strong>Customer:</strong>{" "}
                     {order.user?.username}
@@ -164,43 +288,58 @@ useEffect(() => {
                   </p>
 
                   {/* ACTION LINKS */}
-                 
+                  <div className="flex gap-3 mt-2">
 
-{/* ACTION LINKS */}
-<div className="flex gap-3 mt-2">
-  {order.customer_phone && (
-    <a
-      href={`tel:${order.customer_phone}`}
-      className="flex items-center gap-1 text-blue-600 text-xs"
-    >
-      <FaPhoneAlt className="h-4 w-4" />
-      Call
-    </a>
-  )}
+                    {order.customer_phone && (
 
-  {order.customer_location && (
-    <a
-      href={`https://www.google.com/maps/search/?api=1&query=${order.customer_location}`}
-      target="_blank"
-      rel="noreferrer"
-      className="flex items-center gap-1 text-green-600 text-xs"
-    >
-      <FaMapMarkerAlt className="h-4 w-4" />
-      Map
-    </a>
-  )}
-</div>
+                      <a
+                        href={`tel:${order.customer_phone}`}
+                        className="flex items-center gap-1 text-blue-600 text-xs"
+                      >
+
+                        <FaPhoneAlt className="h-4 w-4" />
+
+                        Call
+
+                      </a>
+
+                    )}
+
+                    {order.customer_location && (
+
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${order.customer_location}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1 text-green-600 text-xs"
+                      >
+
+                        <FaMapMarkerAlt className="h-4 w-4" />
+
+                        Map
+
+                      </a>
+
+                    )}
+
+                  </div>
 
                 </div>
+
               )}
 
-              {/* ACTION BUTTONS */}
+              {/* OWNER ACTION BUTTONS */}
               {role === "owner" && (
-                <div className="flex gap-2 mt-4 ">
+
+                <div className="flex gap-2 mt-4">
+
                   {["pending", "washing", "completed"].map((s) => (
+
                     <button
                       key={s}
-                      onClick={() => handleStatusUpdate(order.id, s)}
+                      onClick={() =>
+                        handleStatusUpdate(order.id, s)
+                      }
                       className={`px-3 py-1 text-xs rounded-md text-white cursor-pointer ${
                         s === "pending"
                           ? "bg-gray-500"
@@ -209,20 +348,32 @@ useEffect(() => {
                           : "bg-green-600"
                       }`}
                     >
+
                       {s}
+
                     </button>
+
                   ))}
+
                 </div>
+
               )}
 
               {/* FOOTER */}
               <div className="mt-4 text-xs text-gray-400">
+
                 Order #{order.id}
+
               </div>
+
             </div>
+
           ))}
+
         </div>
+
       </div>
+
     </div>
   );
 }
@@ -231,195 +382,226 @@ export default Orders;
 
 
 
-
-
-
 // import { useEffect, useState } from "react";
 // import { getOrders, getOwnerOrders, updateOrderStatus } from "../api";
+//  import { FaPhoneAlt } from "react-icons/fa";
+// import { FaMapMarkerAlt } from "react-icons/fa";
+// import {Link} from "react-router-dom"
+
+// import { useContext } from "react";
+// import { AuthContext } from "../context/AuthContext";
 
 // function Orders() {
 //   const [orders, setOrders] = useState([]);
 //   const [loading, setLoading] = useState(true);
 
-//   const role = localStorage.getItem("role");
+//   // const role = localStorage.getItem("role");
+//   const user = JSON.parse(localStorage.getItem("user"));
+// const role = user?.role;
 
-//   // =========================
-//   // 📡 FETCH ORDERS
-//   // =========================
 //   const fetchOrders = async () => {
 //     try {
-//       let data;
-
-//       if (role === "owner") {
-//         data = await getOwnerOrders(); //  fetches shop orders if logged in as owner
-//       } else {
-//         data = await getOrders(); //  fetches customer’s own orders
-//       }
-
-//       setOrders(data); //  updates state with fetched orders
+//       const data =
+//         role === "owner" ? await getOwnerOrders() : await getOrders();
+//       setOrders(data);
 //     } catch (error) {
-//       console.error(
-//         " Failed to fetch orders:",
-//         error.response?.data || error.message, //  good error handling
-//       );
+//       console.error(" Failed:", error.response?.data || error.message);
 //     } finally {
-//       setLoading(false); //  ensures loading state is cleared
+//       setLoading(false);
 //     }
 //   };
 
-//   useEffect(() => {
-//     fetchOrders(); //  runs once on mount
-//   }, []);
+  
+// // avoids fetching before token exists, preventing unauthorized errors and ensuring orders load correctly after login. This is crucial for a smooth user experience, especially when navigating directly to the orders page after authentication.
+// const { token } = useContext(AuthContext);
 
-//   // =========================
-//   // 🔄 UPDATE STATUS (OWNER)
-//   // =========================
+// useEffect(() => {
+
+//   const interval = setInterval(async () => {
+//     try {
+//       const data = await getOrders();
+//       setOrders(data);
+
+//     } catch (err) {
+//       console.error(err);
+//     }
+//   }, 5000);
+
+//   return () => clearInterval(interval);
+
+// }, []);
+
+// // useEffect(() => {
+// //   if (token) {
+// //     fetchOrders();
+// //   }
+// // }, [token]);
+
+
 //   const handleStatusUpdate = async (id, status) => {
 //     try {
-//       await updateOrderStatus(id, status); //  updates order status via API
-//       fetchOrders(); //  refreshes orders after update
+//       await updateOrderStatus(id, status);
+//       fetchOrders();
 //     } catch (err) {
-//       console.error(" Update error:", err.response?.data); //  logs error clearly
+//       console.error(" Update error:", err.response?.data);
 //     }
 //   };
 
-//   // =========================
-//   // UI STATES
-//   // =========================
+//   const getStatusStyle = (status) => {
+//     switch (status) {
+//       case "completed":
+//         return "bg-green-100 text-green-700";
+//       case "washing":
+//         return "bg-yellow-100 text-yellow-700";
+//       default:
+//         return "bg-gray-100 text-gray-700";
+//     }
+//   };
+
 //   if (loading) {
 //     return (
 //       <div className="min-h-[50vh] flex items-center justify-center">
-//         <div className="text-center">
-//           <div className="inline-block w-10 h-10 border-4 border-blue-300 border-t-transparent rounded-full animate-spin mb-3" />
-//           <div className="text-sm text-gray-600">Loading orders...</div>
-//         </div>
+//         <div className="animate-spin w-10 h-10 border-4 border-blue-300 border-t-transparent rounded-full" />
 //       </div>
 //     );
 //   }
 
 //   if (orders.length === 0) {
 //     return (
-//       <div className="min-h-[50vh] flex items-center justify-center px-4">
-//         <div className="max-w-xl text-center bg-white p-8 rounded-2xl shadow">
-//           <h3 className="text-lg font-semibold text-gray-900 mb-2">
-//             No orders found
-//           </h3>
-//           <p className="text-sm text-gray-500">
-//             You don't have any orders yet. Once you place an order it will
-//             appear here.
-//           </p>
-//         </div>
+//       <div className="min-h-[50vh] flex items-center justify-center">
+//         <Link to="/shops" className="text-gray-500">No orders yet <span className="text-blue-500">add</span> </Link> 
 //       </div>
 //     );
 //   }
 
 //   return (
-//     <div className="min-h-[70vh] bg-gray-300 py-10">
-//       <div className="max-w-4xl mx-auto px-4">
-//         <div className="flex items-center justify-between mb-6">
-//           <h2 className="text-2xl font-extrabold text-gray-900">
+//     <div className="min-h-[80vh] bg-gray-100 py-10 px-4">
+//       <div className="max-w-5xl mx-auto">
+//         {/* HEADER */}
+//         <div className="flex justify-between items-center mb-8">
+//           <h2 className="text-3xl font-bold">
 //             {role === "owner" ? "Shop Orders" : "My Orders"}
 //           </h2>
-//           <div className="text-sm text-gray-500">
-//             {orders.length} {orders.length === 1 ? "order" : "orders"}
-//           </div>
+//           <span className="text-gray-500 text-sm">
+//             {orders.length} orders
+//           </span>
 //         </div>
 
-//         <div className="flex flex-col gap-4">
+//         {/* ORDER LIST */}
+//         <div className="space-y-5">
 //           {orders.map((order) => (
 //             <div
 //               key={order.id}
-//               className="bg-white rounded-xl shadow-sm hover:shadow-md transition p-4"
+//               className="bg-white rounded-2xl shadow hover:shadow-lg transition p-5"
 //             >
-//               <div className="flex items-start gap-4">
-//                 {/* Left meta */}
-//                 <div className="flex-shrink-0">
-//                   <div className="w-14 h-14 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 font-bold">
-//                     {order.id}
-//                   </div>
+//               {/* TOP ROW */}
+//               <div className="flex justify-between items-center">
+//                 <div>
+//                   <h3 className="font-semibold text-lg">
+//                     {order.service?.name}
+//                   </h3>
+//                   <p className="text-sm text-gray-500">
+//                     {order.shop?.name}
+//                   </p>
 //                 </div>
 
-//                 {/* Main content */}
-//                 <div className="flex-1">
-//                   <div className="flex items-start justify-between gap-4">
-//                     <div>
-//                       <h3 className="text-md font-semibold text-gray-900">
-//                         {order.service?.name ?? "Service"}
-//                       </h3>
+//                 <span
+//                   className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusStyle(
+//                     order.status
+//                   )}`}
+//                 >
+//                   {order.status}
+//                 </span>
+//               </div>
 
-//                       <div className="mt-1 text-sm text-gray-600">
-//                         <span className="mr-2">
-//                           <strong>Shop:</strong> {order.shop?.name ?? "—"}
-//                         </span>
-//                         {role === "owner" && (
-//                           <span>
-//                             <strong>Customer:</strong>{" "}
-//                             {order.user?.username ?? "—"}
-//                           </span>
-//                         )}
-//                       </div>
-//                     </div>
-
-//                     <div className="text-right">
-//                       <div className="text-sm text-gray-500">Weight</div>
-//                       <div className="text-lg font-semibold text-gray-900">
-//                         {order.weight} kg
-//                       </div>
-//                     </div>
-//                   </div>
-
-//                   <div className="mt-3 flex items-center justify-between gap-4">
-//                     <div className="text-sm text-gray-700 bg-gray-50 p-2 rounded">
-//                       <div className="text-xs text-gray-500">Total</div>
-//                       <div className="font-semibold">
-//                         KES {order.total_price}
-//                       </div>
-//                     </div>
-
-//                     <div className="ml-auto text-sm">
-//                       <div>
-//                         <span
-//                           className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
-//                           ${
-//                             order.status === "completed"
-//                               ? "bg-green-100 text-green-700"
-//                               : order.status === "washing"
-//                                 ? "bg-yellow-100 text-yellow-700"
-//                                 : "bg-gray-100 text-gray-700"
-//                           }`}
-//                         >
-//                           {order.status}
-//                         </span>
-//                       </div>
-//                     </div>
-//                   </div>
-
-//                   {/* Owner actions */}
-//                   {role === "owner" && (
-//                     <div className="mt-4 flex flex-wrap gap-2">
-//                       {["pending", "washing", "completed"].map((s) => {
-//                         const baseClasses =
-//                           "text-sm px-3 py-1 rounded-md transition";
-//                         const statusClasses =
-//                           s === "pending"
-//                             ? "bg-gray-400 hover:bg-gray-500 text-white"
-//                             : s === "washing"
-//                               ? "bg-yellow-600 hover:bg-yellow-600 text-white"
-//                               : "bg-green-700 hover:bg-green-700 text-white";
-
-//                         return (
-//                           <button
-//                             key={s}
-//                             onClick={() => handleStatusUpdate(order.id, s)}
-//                             className={`${baseClasses} ${statusClasses}`}
-//                           >
-//                             {s}
-//                           </button>
-//                         );
-//                       })}
-//                     </div>
-//                   )}
+//               {/* DETAILS */}
+//               <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
+//                 <div>
+//                   <p className="text-gray-500">Weight</p>
+//                   <p className="font-semibold">{order.weight} kg</p>
 //                 </div>
+
+//                 <div>
+//                   <p className="text-gray-500">Total</p>
+//                   <p className="font-semibold text-blue-600">
+//                     KES {order.total_price}
+//                   </p>
+//                 </div>
+//               </div>
+
+//               {/* OWNER VIEW */}
+//               {role === "owner" && (
+//                 <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
+//                   <p>
+//                     <strong>Customer:</strong>{" "}
+//                     {order.user?.username}
+//                   </p>
+
+//                   <p>
+//                     <strong>Phone:</strong>{" "}
+//                     {order.customer_phone || "N/A"}
+//                   </p>
+
+//                   <p>
+//                     <strong>Location:</strong>{" "}
+//                     {order.customer_location || "N/A"}
+//                   </p>
+
+//                   {/* ACTION LINKS */}
+                 
+
+// {/* ACTION LINKS */}
+// <div className="flex gap-3 mt-2">
+//   {order.customer_phone && (
+//     <a
+//       href={`tel:${order.customer_phone}`}
+//       className="flex items-center gap-1 text-blue-600 text-xs"
+//     >
+//       <FaPhoneAlt className="h-4 w-4" />
+//       Call
+//     </a>
+//   )}
+
+//   {order.customer_location && (
+//     <a
+//       href={`https://www.google.com/maps/search/?api=1&query=${order.customer_location}`}
+//       target="_blank"
+//       rel="noreferrer"
+//       className="flex items-center gap-1 text-green-600 text-xs"
+//     >
+//       <FaMapMarkerAlt className="h-4 w-4" />
+//       Map
+//     </a>
+//   )}
+// </div>
+
+//                 </div>
+//               )}
+
+//               {/* ACTION BUTTONS */}
+//               {role === "owner" && (
+//                 <div className="flex gap-2 mt-4 ">
+//                   {["pending", "washing", "completed"].map((s) => (
+//                     <button
+//                       key={s}
+//                       onClick={() => handleStatusUpdate(order.id, s)}
+//                       className={`px-3 py-1 text-xs rounded-md text-white cursor-pointer ${
+//                         s === "pending"
+//                           ? "bg-gray-500"
+//                           : s === "washing"
+//                           ? "bg-yellow-500"
+//                           : "bg-green-600"
+//                       }`}
+//                     >
+//                       {s}
+//                     </button>
+//                   ))}
+//                 </div>
+//               )}
+
+//               {/* FOOTER */}
+//               <div className="mt-4 text-xs text-gray-400">
+//                 Order #{order.id}
 //               </div>
 //             </div>
 //           ))}
