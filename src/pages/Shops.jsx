@@ -8,6 +8,7 @@ import { AuthContext } from "../context/AuthContext";
 function Shops() {
   const [shops, setShops] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [search, setsearch] = useState("");
 
   const navigate = useNavigate();
 
@@ -36,6 +37,16 @@ function Shops() {
       setLoading(false);
     }
   };
+
+  //search
+  const filteredShops = shops.filter((shop) => {
+  const query = search.toLowerCase();
+
+  return (
+    shop.name?.toLowerCase().includes(query) ||
+    shop.location?.toLowerCase().includes(query)
+  );
+});
 
   // =========================
   // DELETE SHOP
@@ -115,10 +126,43 @@ function Shops() {
         </h2>
       </div>
 
+      
+      {/* SEARCH BAR */}
+<div className="mb-8">
+  <div className="relative">
+
+    <input
+      type="text"
+      placeholder="Search by shop name or location..."
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+      className="w-full bg-white border border-gray-200 rounded-2xl px-5 py-4 pl-12 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+    />
+
+    {/* SEARCH ICON */}
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-5 w-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z"
+      />
+    </svg>
+
+  </div>
+</div>
+
       {/* GRID */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
 
-        {shops.map((shop) => {
+        {/*  search*/}
+        {filteredShops.map((shop) => {
 
           const isOwner =
             user?.role === "owner" &&
@@ -142,6 +186,12 @@ function Shops() {
             }
           }
 
+          {filteredShops.length === 0 && (
+  <div className="text-center py-16 text-gray-500">
+    No shops found
+  </div>
+)}
+// 
           return (
             <div
               key={shop.id}
