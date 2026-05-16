@@ -56,7 +56,7 @@ const Dashboard = () => {
   const [serviceMessage, setServiceMessage] = useState("");
 
   // =========================
-  // INITIAL FETCH
+  // AUTH CHECK
   // =========================
   useEffect(() => {
     if (token === undefined) return;
@@ -66,7 +66,7 @@ const Dashboard = () => {
       return;
     }
 
-    if (role && role !== "owner") {
+    if (role !== "owner") {
       navigate("/shops");
       return;
     }
@@ -93,28 +93,49 @@ const Dashboard = () => {
   }, [token, role]);
 
   // =========================
-  // FETCH ALL
+  // FETCH EVERYTHING
   // =========================
   const fetchAll = async () => {
     try {
       setLoading(true);
 
-      const [shopsData, ordersData] = await Promise.all([
-        getShops(),
-        getOwnerOrders(),
+      await Promise.all([
+        fetchShops(),
+        fetchOrders(),
       ]);
-
-      const ownerShops = shopsData.filter(
-        (shop) => shop.owner === user?.username
-      );
-
-      setShops(ownerShops);
-
-      setOrders(ordersData);
     } catch (error) {
       console.error("Dashboard fetch error:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // =========================
+  // FETCH SHOPS
+  // =========================
+  const fetchShops = async () => {
+    try {
+      const data = await getShops();
+
+      const ownerShops = data.filter(
+        (shop) => shop.owner === user?.username
+      );
+
+      setShops(ownerShops);
+    } catch (error) {
+      console.error("Fetch shops error:", error);
+    }
+  };
+
+  // =========================
+  // FETCH ORDERS
+  // =========================
+  const fetchOrders = async () => {
+    try {
+      const data = await getOwnerOrders();
+      setOrders(data);
+    } catch (error) {
+      console.error("Fetch orders error:", error);
     }
   };
 
@@ -170,11 +191,9 @@ const Dashboard = () => {
         image: null,
       });
 
-      document.getElementById(
-        "shop-image-input"
-      ).value = "";
+      document.getElementById("shop-image-input").value = "";
 
-      fetchAll();
+      fetchShops();
     } catch (error) {
       console.error("Create shop error:", error);
 
@@ -226,7 +245,7 @@ const Dashboard = () => {
   // =========================
   // LOADING
   // =========================
-  if (loading) {
+  if (!token || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-gray-500 text-lg">
@@ -241,6 +260,7 @@ const Dashboard = () => {
 
       {/* MOBILE TOPBAR */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-blue-600 text-white flex items-center justify-between px-4 py-3 shadow-lg">
+
         <div className="flex items-center gap-2">
           <Store size={22} />
           <h1 className="font-bold text-lg">
@@ -254,9 +274,10 @@ const Dashboard = () => {
         >
           <Menu size={24} />
         </button>
+
       </div>
 
-      {/* OVERLAY */}
+      {/* MOBILE OVERLAY */}
       {sidebarOpen && (
         <div
           onClick={() => setSidebarOpen(false)}
@@ -270,7 +291,7 @@ const Dashboard = () => {
           fixed inset-y-0 left-0 z-50 w-72 bg-blue-600 text-white
           transform transition-transform duration-300 overflow-y-auto
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-          md:translate-x-0
+          md:translate-x-0 md:flex
         `}
       >
         <div className="p-6 flex flex-col min-h-screen">
@@ -287,23 +308,26 @@ const Dashboard = () => {
 
           {/* BRAND */}
           <div className="flex items-center gap-3 mb-8">
-            <div className="bg-white/10 p-2 rounded">
-              <Store size={22} />
+
+            <div className="bg-white/10 p-3 rounded-xl">
+              <Store size={24} />
             </div>
 
             <div>
-              <h2 className="text-2xl font-bold">
+              <h1 className="text-2xl font-bold">
                 DRYME
-              </h2>
+              </h1>
 
               <p className="text-sm text-white/80">
                 Owner Dashboard
               </p>
             </div>
+
           </div>
 
           {/* NAVIGATION */}
           <nav className="flex-1">
+
             <ul className="space-y-2">
 
               <li>
@@ -328,7 +352,7 @@ const Dashboard = () => {
                     Orders
                   </div>
 
-                  <span className="bg-white/10 px-2 py-1 rounded-full text-xs">
+                  <span className="bg-white/20 text-xs px-2 py-1 rounded-full">
                     {orders.length}
                   </span>
                 </Link>
@@ -357,6 +381,7 @@ const Dashboard = () => {
               </li>
 
             </ul>
+
           </nav>
 
           {/* LOGOUT */}
@@ -367,6 +392,7 @@ const Dashboard = () => {
             <LogOut size={18} />
             Logout
           </button>
+
         </div>
       </aside>
 
@@ -375,6 +401,7 @@ const Dashboard = () => {
 
         {/* HEADER */}
         <div className="mb-8">
+
           <h1 className="text-3xl font-extrabold text-gray-800">
             Welcome {user?.username}
           </h1>
@@ -382,6 +409,7 @@ const Dashboard = () => {
           <p className="text-gray-500 mt-1">
             Manage your laundry business
           </p>
+
         </div>
 
         {/* STATS */}
@@ -389,6 +417,7 @@ const Dashboard = () => {
 
           <div className="bg-white rounded-2xl p-5 shadow-sm">
             <div className="flex items-center gap-4">
+
               <div className="bg-blue-100 p-3 rounded-xl text-blue-600">
                 <Store size={22} />
               </div>
@@ -402,11 +431,13 @@ const Dashboard = () => {
                   {shops.length}
                 </h2>
               </div>
+
             </div>
           </div>
 
           <div className="bg-white rounded-2xl p-5 shadow-sm">
             <div className="flex items-center gap-4">
+
               <div className="bg-green-100 p-3 rounded-xl text-green-600">
                 <ShoppingCart size={22} />
               </div>
@@ -420,11 +451,13 @@ const Dashboard = () => {
                   {orders.length}
                 </h2>
               </div>
+
             </div>
           </div>
 
           <div className="bg-white rounded-2xl p-5 shadow-sm">
             <div className="flex items-center gap-4">
+
               <div className="bg-yellow-100 p-3 rounded-xl text-yellow-600">
                 <Users size={22} />
               </div>
@@ -438,12 +471,321 @@ const Dashboard = () => {
                   You
                 </h2>
               </div>
+
             </div>
           </div>
 
         </div>
 
+        {/* CONTENT */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          {/* SHOPS */}
+          <section className="lg:col-span-2 bg-white rounded-2xl shadow-sm p-6">
+
+            <div className="flex items-center justify-between mb-6">
+
+              <h2 className="text-xl font-bold text-gray-800">
+                My Shops
+              </h2>
+
+              <span className="text-sm text-gray-500">
+                {shops.length} shops
+              </span>
+
+            </div>
+
+            {shops.length === 0 ? (
+
+              <div className="text-center py-10 text-gray-500">
+                No shops created yet
+              </div>
+
+            ) : (
+
+              <div className="space-y-5">
+
+                {shops.map((shop) => (
+
+                  <div
+                    key={shop.id}
+                    className="border rounded-2xl overflow-hidden hover:shadow-md transition"
+                  >
+
+                    {/* SHOP IMAGE */}
+                    <div className="h-52 bg-gray-100 overflow-hidden">
+
+                      {shop.image ? (
+
+                        <img
+                          src={shop.image}
+                          alt={shop.name}
+                          className="w-full h-full object-cover"
+                        />
+
+                      ) : (
+
+                        <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                          <ImageIcon size={40} />
+                          <p className="text-sm mt-2">
+                            No Image
+                          </p>
+                        </div>
+
+                      )}
+
+                    </div>
+
+                    {/* SHOP INFO */}
+                    <div className="p-5">
+
+                      <div className="flex items-start justify-between gap-4">
+
+                        <div>
+                          <h3 className="font-bold text-lg text-gray-800">
+                            {shop.name}
+                          </h3>
+
+                          <p className="text-sm text-gray-500 mt-1">
+                            {shop.location}
+                          </p>
+                        </div>
+
+                        <div className="flex gap-2">
+
+                          <button
+                            onClick={() =>
+                              navigate(`/edit-shop/${shop.id}`)
+                            }
+                            className="flex items-center gap-1 border px-3 py-2 rounded-lg text-sm hover:bg-gray-50"
+                          >
+                            <Edit2 size={14} />
+                            Edit
+                          </button>
+
+                          <button
+                            onClick={() =>
+                              handleDelete(shop.id)
+                            }
+                            className="flex items-center gap-1 border border-red-200 text-red-600 px-3 py-2 rounded-lg text-sm hover:bg-red-50"
+                          >
+                            <Trash2 size={14} />
+                            Delete
+                          </button>
+
+                        </div>
+
+                      </div>
+
+                      <p className="text-gray-600 text-sm mt-3">
+                        {shop.description}
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                ))}
+
+              </div>
+
+            )}
+
+          </section>
+
+          {/* ADD SHOP */}
+          <aside className="bg-white rounded-2xl shadow-sm p-6 h-fit">
+
+            <div className="flex items-center justify-between mb-5">
+
+              <h2 className="text-xl font-bold text-gray-800">
+                Add Shop
+              </h2>
+
+              <PlusCircle className="text-blue-600" size={22} />
+
+            </div>
+
+            <form
+              onSubmit={handleShopSubmit}
+              className="space-y-4"
+            >
+
+              <input
+                type="text"
+                placeholder="Shop Name"
+                required
+                value={shopForm.name}
+                onChange={(e) =>
+                  setShopForm({
+                    ...shopForm,
+                    name: e.target.value,
+                  })
+                }
+                className="w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200"
+              />
+
+              <input
+                type="text"
+                placeholder="Location"
+                required
+                value={shopForm.location}
+                onChange={(e) =>
+                  setShopForm({
+                    ...shopForm,
+                    location: e.target.value,
+                  })
+                }
+                className="w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200"
+              />
+
+              <textarea
+                rows={4}
+                placeholder="Description"
+                required
+                value={shopForm.description}
+                onChange={(e) =>
+                  setShopForm({
+                    ...shopForm,
+                    description: e.target.value,
+                  })
+                }
+                className="w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200"
+              />
+
+              {/* IMAGE */}
+              <div>
+
+                <label className="block text-sm text-gray-600 mb-2">
+                  Shop Image
+                </label>
+
+                <input
+                  id="shop-image-input"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) =>
+                    setShopForm({
+                      ...shopForm,
+                      image: e.target.files[0],
+                    })
+                  }
+                  className="w-full text-sm"
+                />
+
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-medium transition"
+              >
+                Create Shop
+              </button>
+
+            </form>
+
+            {shopMessage && (
+              <p className="mt-4 text-sm text-center text-green-600">
+                {shopMessage}
+              </p>
+            )}
+
+          </aside>
+
+        </div>
+
+        {/* SERVICES */}
+        <section className="bg-white rounded-2xl shadow-sm p-6 mt-6">
+
+          <div className="flex items-center justify-between mb-5">
+
+            <h2 className="text-xl font-bold text-gray-800">
+              Add Service
+            </h2>
+
+            <Tag className="text-blue-600" size={22} />
+
+          </div>
+
+          <form
+            onSubmit={handleServiceSubmit}
+            className="grid grid-cols-1 md:grid-cols-4 gap-4"
+          >
+
+            {/* SHOP */}
+            <select
+              value={serviceForm.shop}
+              onChange={(e) =>
+                setServiceForm({
+                  ...serviceForm,
+                  shop: e.target.value,
+                })
+              }
+              className="border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200"
+            >
+              <option value="">
+                Select Shop
+              </option>
+
+              {shops.map((shop) => (
+                <option
+                  key={shop.id}
+                  value={shop.id}
+                >
+                  {shop.name}
+                </option>
+              ))}
+
+            </select>
+
+            {/* SERVICE NAME */}
+            <input
+              type="text"
+              placeholder="Service Name"
+              value={serviceForm.name}
+              onChange={(e) =>
+                setServiceForm({
+                  ...serviceForm,
+                  name: e.target.value,
+                })
+              }
+              className="border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200"
+            />
+
+            {/* PRICE */}
+            <input
+              type="number"
+              placeholder="Price per kg"
+              value={serviceForm.price_per_kg}
+              onChange={(e) =>
+                setServiceForm({
+                  ...serviceForm,
+                  price_per_kg: e.target.value,
+                })
+              }
+              className="border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200"
+            />
+
+            {/* BUTTON */}
+            <button
+              type="submit"
+              className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition"
+            >
+              Add Service
+            </button>
+
+          </form>
+
+          {serviceMessage && (
+            <p className="mt-4 text-sm text-green-600">
+              {serviceMessage}
+            </p>
+          )}
+
+        </section>
+
       </main>
+
     </div>
   );
 };
