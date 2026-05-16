@@ -482,7 +482,7 @@ const Dashboard = () => {
   <LogOut size={18} />
 </button>
         {/* HEADER */}
-        <div className="mb-8">
+        <div className="my-8 ml-4">
 
           <h1 className="text-3xl font-extrabold text-gray-800">
             Welcome {user?.username}
