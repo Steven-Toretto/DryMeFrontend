@@ -462,13 +462,13 @@ const Dashboard = () => {
     </nav>
 
     {/* LOGOUT */}
-    {/* <button
+    <button
       onClick={handleLogout}
-      className="mt-3 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 px-4 py-3 rounded-lg transition"
+      className=" md:hidden mt-3 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 px-4 py-3 rounded-lg transition"
     >
       <LogOut size={18} />
       Logout
-    </button> */}
+    </button>
 
   </div>
 </aside>
