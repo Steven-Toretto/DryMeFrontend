@@ -136,7 +136,19 @@ function Shops() {
       placeholder="Search by shop name or location..."
       value={search}
       onChange={(e) => setSearch(e.target.value)}
-      className="w-full bg-white border border-gray-200 rounded-2xl px-5 py-4 pl-12 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+      className="
+    w-full
+    bg-white
+    text-gray-800
+    placeholder-gray-400
+    border border-gray-200
+    rounded-2xl
+    px-5 py-4 pl-12
+    shadow-sm
+    focus:outline-none
+    focus:ring-2
+    focus:ring-blue-200
+  "
     />
 
     {/* SEARCH ICON */}
