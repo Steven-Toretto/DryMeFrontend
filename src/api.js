@@ -117,7 +117,7 @@ export const loginUser = async (
 // 🏪 SHOPS
 // ============================
 
-export const getShop = async (id) => {
+export const getShops = async (id) => {
 
   const response = await API.get(
     `/shops/${id}/`
