@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import {
   createShop,
-  getShops,
+  getShop,
   createService,
   getOwnerOrders,
   deleteShop,
@@ -115,7 +115,7 @@ const Dashboard = () => {
   // =========================
   const fetchShops = async () => {
     try {
-      const data = await getShops();
+      const data = await getShop();
 
       const ownerShops = data.filter(
         (shop) => shop.owner === user?.username

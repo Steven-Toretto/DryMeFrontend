@@ -1,5 +1,5 @@
 import { useEffect, useState, useContext } from "react";
-import { getShops, deleteShop } from "../api";
+import { getShop, deleteShop } from "../api";
 import { useNavigate, Link } from "react-router-dom";
 import { FaMapMarkerAlt } from "react-icons/fa";
 
@@ -30,7 +30,7 @@ function Shops() {
     try {
       setLoading(true);
 
-      const data = await getShops();
+      const data = await getShop();
 
       setShops(data);
 
