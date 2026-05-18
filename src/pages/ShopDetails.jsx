@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   getServices,
   createOrder,
-  getShop,
+  getShops,
 } from "../api";
 
 function ShopDetails() {
@@ -53,7 +53,7 @@ function ShopDetails() {
 
       const [shopData, servicesData] =
         await Promise.all([
-          getShop(id),
+          getShops(id),
           getServices(id),
         ]);
 

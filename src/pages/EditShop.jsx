@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getShop, updateShop } from "../api";
+import { getShops, updateShop } from "../api";
 
 function EditShop() {
   const { id } = useParams();
@@ -31,7 +31,7 @@ function EditShop() {
     try {
       setFetching(true);
 
-      const shops = await getShop();
+      const shops = await getShops();
 
       const shop = shops.find(
         (s) => s.id === Number(id)
