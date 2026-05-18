@@ -117,10 +117,19 @@ export const loginUser = async (
 // 🏪 SHOPS
 // ============================
 
-export const getShops = async () => {
-  const res = await API.get("shops/");
-  return res.data;
+export const getShop = async (id) => {
+
+  const response = await API.get(
+    `/shops/${id}/`
+  );
+
+  return response.data;
 };
+
+// export const getShops = async () => {
+//   const res = await API.get("shops/");
+//   return res.data;
+// };
 
 export const createShop = async (data) => {
 
