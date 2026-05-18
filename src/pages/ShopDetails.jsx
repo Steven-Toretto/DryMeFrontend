@@ -293,7 +293,7 @@ function ShopDetails() {
   }
 
   // ===============================
-  // UI
+  // UI (user experience)
   // ===============================
   return (
     <div className="min-h-screen bg-gray-100 py-10 px-4">
