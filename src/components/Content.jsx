@@ -166,7 +166,7 @@ function Content() {
           </div>
         </div>
       </section>
-
+{/* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */}
       {/* FEATURED SHOPS */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-6">
@@ -197,13 +197,31 @@ function Content() {
                   <p className="text-sm text-gray-700 mt-3 line-clamp-3">{shop.description}</p>
 
                   <div className="mt-4 flex items-center gap-3">
+
+  <Link
+    to={`/shop/${shop.id}`}
+    className="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition"
+  >
+    View Shop
+  </Link>
+
+  <Link
+    to={`/shop/${shop.id}#book`}
+    className="text-sm text-gray-600 hover:underline"
+  >
+    Book Now
+  </Link>
+
+</div>
+
+                  {/* <div className="mt-4 flex items-center gap-3">
                     <Link to={`/shops/${shop.id}`} className="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition">
                       View Shop
                     </Link>
                     <Link to={`/shops/${shop.id}#book`} className="text-sm text-gray-600 hover:underline">
                       Book Now
                     </Link>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             ))}
