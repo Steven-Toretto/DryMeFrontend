@@ -35,7 +35,7 @@ function ShopDetails() {
   const [success, setSuccess] = useState("");
 
   // ===============================
-  // FETCH SHOP + SERVICES
+  // FETCHING SHOP + SERVICES
   // ===============================
   useEffect(() => {
 
