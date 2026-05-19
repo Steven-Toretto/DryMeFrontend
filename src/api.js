@@ -37,7 +37,6 @@ API.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // prevent infinite retry loop
     if (
       error.response?.status === 401 &&
       !originalRequest._retry
@@ -60,10 +59,8 @@ API.interceptors.response.use(
 
         const newAccess = response.data.access;
 
-        // save new access token
         localStorage.setItem("access", newAccess);
 
-        // update axios headers
         API.defaults.headers.common[
           "Authorization"
         ] = `Bearer ${newAccess}`;
@@ -72,12 +69,10 @@ API.interceptors.response.use(
           "Authorization"
         ] = `Bearer ${newAccess}`;
 
-        // retry failed request
         return API(originalRequest);
 
       } catch (refreshError) {
 
-        // logout if refresh fails
         localStorage.removeItem("access");
         localStorage.removeItem("refresh");
         localStorage.removeItem("user");
@@ -117,13 +112,11 @@ export const loginUser = async (
 // 🏪 SHOPS
 // ============================
 
-// ✅ GET ALL SHOPS
 export const getShops = async () => {
   const res = await API.get("shops/");
   return res.data;
 };
 
-// ✅ GET SINGLE SHOP
 export const getShop = async (id) => {
   const res = await API.get(
     `shops/${id}/`
@@ -132,7 +125,6 @@ export const getShop = async (id) => {
   return res.data;
 };
 
-// ✅ CREATE SHOP
 export const createShop = async (data) => {
 
   const res = await API.post(
@@ -149,7 +141,6 @@ export const createShop = async (data) => {
   return res.data;
 };
 
-// ✅ UPDATE SHOP
 export const updateShop = async (
   id,
   data
@@ -169,7 +160,6 @@ export const updateShop = async (
   return res.data;
 };
 
-// ✅ DELETE SHOP
 export const deleteShop = async (id) => {
   const res = await API.delete(
     `shops/${id}/`
@@ -213,16 +203,40 @@ export const createService = async (
 // 📦 ORDERS
 // ============================
 
+// ACTIVE CUSTOMER ORDERS
 export const getOrders = async () => {
   const res = await API.get("orders/");
   return res.data;
 };
 
+// ACTIVE OWNER ORDERS
 export const getOwnerOrders =
   async () => {
 
     const res = await API.get(
       "owner/orders/"
+    );
+
+    return res.data;
+  };
+
+// ARCHIVED CUSTOMER ORDERS
+export const getArchivedOrders =
+  async () => {
+
+    const res = await API.get(
+      "orders/archived/"
+    );
+
+    return res.data;
+  };
+
+// ARCHIVED OWNER ORDERS
+export const getArchivedOwnerOrders =
+  async () => {
+
+    const res = await API.get(
+      "owner/orders/archived/"
     );
 
     return res.data;
@@ -253,22 +267,13 @@ export const updateOrderStatus =
     return res.data;
   };
 
-  // archive order (owner only)
-  export const archiveOrder = async (id) => {
-  const res = await API.put(
-    `orders/${id}/archive/`
-  );
-
-  return res.data;
-};
-
-// ✅ DELETE ORDER
-export const deleteOrder = async (
+// ARCHIVE ORDER
+export const archiveOrder = async (
   id
 ) => {
 
-  const res = await API.delete(
-    `orders/${id}/`
+  const res = await API.put(
+    `orders/${id}/archive/`
   );
 
   return res.data;
@@ -292,26 +297,28 @@ export default API;
 
 
 
-
 // import axios from "axios";
 
+// // ============================
+// // 🌍 BASE URL
+// // ============================
+// const BASE_URL = import.meta.env.VITE_API_URL;
 
 // // ============================
-// // BASE API
+// // 🚀 API INSTANCE
 // // ============================
 // const API = axios.create({
-//   baseURL: `${import.meta.env.VITE_API_URL}/api/`,
+//   baseURL: `${BASE_URL}/api/`,
 // });
 
 // // ============================
-// // 🔐 REQUEST INTERCEPTOR (ATTACH ACCESS TOKEN)
+// // 🔐 ATTACH ACCESS TOKEN
 // // ============================
 // API.interceptors.request.use(
 //   (config) => {
 //     const token = localStorage.getItem("access");
 
 //     if (token) {
-//       config.headers = config.headers || {};
 //       config.headers.Authorization = `Bearer ${token}`;
 //     }
 
@@ -321,7 +328,7 @@ export default API;
 // );
 
 // // ============================
-// // 🔁 RESPONSE INTERCEPTOR (AUTO REFRESH TOKEN)
+// // 🔁 AUTO REFRESH TOKEN
 // // ============================
 // API.interceptors.response.use(
 //   (response) => response,
@@ -329,6 +336,7 @@ export default API;
 //   async (error) => {
 //     const originalRequest = error.config;
 
+//     // prevent infinite retry loop
 //     if (
 //       error.response?.status === 401 &&
 //       !originalRequest._retry
@@ -339,32 +347,43 @@ export default API;
 //         const refresh = localStorage.getItem("refresh");
 
 //         if (!refresh) {
-//           return Promise.reject(error);
+//           throw error;
 //         }
 
-//         const res = await axios.post(
-//           `${import.meta.env.VITE_API_URL}/api/token/refresh/`,
-//           { refresh }
+//         const response = await axios.post(
+//           `${BASE_URL}/api/token/refresh/`,
+//           {
+//             refresh,
+//           }
 //         );
 
-//         const newAccess = res.data.access;
+//         const newAccess = response.data.access;
 
+//         // save new access token
 //         localStorage.setItem("access", newAccess);
 
-//         // update headers
-//         API.defaults.headers.common.Authorization = `Bearer ${newAccess}`;
-//         originalRequest.headers.Authorization = `Bearer ${newAccess}`;
+//         // update axios headers
+//         API.defaults.headers.common[
+//           "Authorization"
+//         ] = `Bearer ${newAccess}`;
 
+//         originalRequest.headers[
+//           "Authorization"
+//         ] = `Bearer ${newAccess}`;
+
+//         // retry failed request
 //         return API(originalRequest);
-//       } catch (err) {
-//         // refresh failed → logout user
+
+//       } catch (refreshError) {
+
+//         // logout if refresh fails
 //         localStorage.removeItem("access");
 //         localStorage.removeItem("refresh");
 //         localStorage.removeItem("user");
 
 //         window.location.href = "/login";
 
-//         return Promise.reject(err);
+//         return Promise.reject(refreshError);
 //       }
 //     }
 
@@ -381,7 +400,10 @@ export default API;
 //   return res.data;
 // };
 
-// export const loginUser = async (username, password) => {
+// export const loginUser = async (
+//   username,
+//   password
+// ) => {
 //   const res = await API.post("login/", {
 //     username,
 //     password,
@@ -394,28 +416,64 @@ export default API;
 // // 🏪 SHOPS
 // // ============================
 
+// // ✅ GET ALL SHOPS
 // export const getShops = async () => {
 //   const res = await API.get("shops/");
 //   return res.data;
 // };
 
+// // ✅ GET SINGLE SHOP
+// export const getShop = async (id) => {
+//   const res = await API.get(
+//     `shops/${id}/`
+//   );
+
+//   return res.data;
+// };
+
+// // ✅ CREATE SHOP
 // export const createShop = async (data) => {
-//   const res = await API.post("shops/", data, {
-//     headers: {
-//       "Content-Type": "multipart/form-data",
-//     },
-//   });
+
+//   const res = await API.post(
+//     "shops/",
+//     data,
+//     {
+//       headers: {
+//         "Content-Type":
+//           "multipart/form-data",
+//       },
+//     }
+//   );
 
 //   return res.data;
 // };
 
+// // ✅ UPDATE SHOP
+// export const updateShop = async (
+//   id,
+//   data
+// ) => {
+
+//   const res = await API.put(
+//     `shops/${id}/`,
+//     data,
+//     {
+//       headers: {
+//         "Content-Type":
+//           "multipart/form-data",
+//       },
+//     }
+//   );
+
+//   return res.data;
+// };
+
+// // ✅ DELETE SHOP
 // export const deleteShop = async (id) => {
-//   const res = await API.delete(`shops/${id}/`);
-//   return res.data;
-// };
+//   const res = await API.delete(
+//     `shops/${id}/`
+//   );
 
-// export const updateShop = async (id, data) => {
-//   const res = await API.put(`shops/${id}/`, data);
 //   return res.data;
 // };
 
@@ -423,7 +481,10 @@ export default API;
 // // 🧺 SERVICES
 // // ============================
 
-// export const getServices = async (shopId = null) => {
+// export const getServices = async (
+//   shopId = null
+// ) => {
+
 //   let url = "services/";
 
 //   if (shopId) {
@@ -431,11 +492,19 @@ export default API;
 //   }
 
 //   const res = await API.get(url);
+
 //   return res.data;
 // };
 
-// export const createService = async (data) => {
-//   const res = await API.post("services/", data);
+// export const createService = async (
+//   data
+// ) => {
+
+//   const res = await API.post(
+//     "services/",
+//     data
+//   );
+
 //   return res.data;
 // };
 
@@ -448,20 +517,58 @@ export default API;
 //   return res.data;
 // };
 
-// export const getOwnerOrders = async () => {
-//   const res = await API.get("owner/orders/");
+// export const getOwnerOrders =
+//   async () => {
+
+//     const res = await API.get(
+//       "owner/orders/"
+//     );
+
+//     return res.data;
+//   };
+
+// export const createOrder = async (
+//   data
+// ) => {
+
+//   const res = await API.post(
+//     "orders/",
+//     data
+//   );
+
 //   return res.data;
 // };
 
-// export const createOrder = async (data) => {
-//   const res = await API.post("orders/", data);
+// export const updateOrderStatus =
+//   async (id, status) => {
+
+//     const res = await API.put(
+//       `orders/${id}/status/`,
+//       {
+//         status,
+//       }
+//     );
+
+//     return res.data;
+//   };
+
+//   // archive order (owner only)
+//   export const archiveOrder = async (id) => {
+//   const res = await API.put(
+//     `orders/${id}/archive/`
+//   );
+
 //   return res.data;
 // };
 
-// export const updateOrderStatus = async (id, status) => {
-//   const res = await API.put(`orders/${id}/status/`, {
-//     status,
-//   });
+// // ✅ DELETE ORDER
+// export const deleteOrder = async (
+//   id
+// ) => {
+
+//   const res = await API.delete(
+//     `orders/${id}/`
+//   );
 
 //   return res.data;
 // };
@@ -470,10 +577,15 @@ export default API;
 // // ⭐ FEATURED SHOPS
 // // ============================
 
-// export const getFeaturedShops = async () => {
-//   const res = await API.get("featured-shops/");
-//   return res.data;
-// };
+// export const getFeaturedShops =
+//   async () => {
+
+//     const res = await API.get(
+//       "featured-shops/"
+//     );
+
+//     return res.data;
+//   };
 
 // export default API;
 
