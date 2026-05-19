@@ -117,20 +117,22 @@ export const loginUser = async (
 // 🏪 SHOPS
 // ============================
 
-// export const getShops = async (id) => {
-
-//   const response = await API.get(
-//     `/shops/${id}/`
-//   );
-
-//   return response.data;
-// };
-
+// ✅ GET ALL SHOPS
 export const getShops = async () => {
   const res = await API.get("shops/");
   return res.data;
 };
 
+// ✅ GET SINGLE SHOP
+export const getShop = async (id) => {
+  const res = await API.get(
+    `shops/${id}/`
+  );
+
+  return res.data;
+};
+
+// ✅ CREATE SHOP
 export const createShop = async (data) => {
 
   const res = await API.post(
@@ -147,6 +149,7 @@ export const createShop = async (data) => {
   return res.data;
 };
 
+// ✅ UPDATE SHOP
 export const updateShop = async (
   id,
   data
@@ -166,6 +169,7 @@ export const updateShop = async (
   return res.data;
 };
 
+// ✅ DELETE SHOP
 export const deleteShop = async (id) => {
   const res = await API.delete(
     `shops/${id}/`
@@ -248,6 +252,18 @@ export const updateOrderStatus =
 
     return res.data;
   };
+
+// ✅ DELETE ORDER
+export const deleteOrder = async (
+  id
+) => {
+
+  const res = await API.delete(
+    `orders/${id}/`
+  );
+
+  return res.data;
+};
 
 // ============================
 // ⭐ FEATURED SHOPS
