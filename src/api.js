@@ -253,6 +253,15 @@ export const updateOrderStatus =
     return res.data;
   };
 
+  // archive order (owner only)
+  export const archiveOrder = async (id) => {
+  const res = await API.put(
+    `orders/${id}/archive/`
+  );
+
+  return res.data;
+};
+
 // ✅ DELETE ORDER
 export const deleteOrder = async (
   id
