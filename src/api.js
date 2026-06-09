@@ -3,11 +3,11 @@ import axios from "axios";
 // ============================
 // 🌍 BASE URL
 // ============================
-const BASE_URL = import.meta.env.VITE_API_URL;
+const BASE_URL = import.meta.env.VITE_API_URL?.trim();
 
 if (!BASE_URL) {
-  throw new Error(
-    "VITE_API_URL is missing. Check your .env files."
+  console.error(
+    "VITE_API_URL is missing. Check Vercel Environment Variables."
   );
 }
 
@@ -50,7 +50,8 @@ API.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refresh = localStorage.getItem("refresh");
+        const refresh =
+          localStorage.getItem("refresh");
 
         if (!refresh) {
           throw error;
@@ -63,9 +64,13 @@ API.interceptors.response.use(
           }
         );
 
-        const newAccess = response.data.access;
+        const newAccess =
+          response.data.access;
 
-        localStorage.setItem("access", newAccess);
+        localStorage.setItem(
+          "access",
+          newAccess
+        );
 
         API.defaults.headers.common[
           "Authorization"
@@ -96,9 +101,11 @@ API.interceptors.response.use(
 // ============================
 // 🔐 AUTH
 // ============================
-
 export const registerUser = async (data) => {
-  const res = await API.post("register/", data);
+  const res = await API.post(
+    "register/",
+    data
+  );
   return res.data;
 };
 
@@ -106,10 +113,13 @@ export const loginUser = async (
   username,
   password
 ) => {
-  const res = await API.post("login/", {
-    username,
-    password,
-  });
+  const res = await API.post(
+    "login/",
+    {
+      username,
+      password,
+    }
+  );
 
   return res.data;
 };
@@ -117,7 +127,6 @@ export const loginUser = async (
 // ============================
 // 🏪 SHOPS
 // ============================
-
 export const getShops = async () => {
   const res = await API.get("shops/");
   return res.data;
@@ -131,8 +140,9 @@ export const getShop = async (id) => {
   return res.data;
 };
 
-export const createShop = async (data) => {
-
+export const createShop = async (
+  data
+) => {
   const res = await API.post(
     "shops/",
     data,
@@ -151,7 +161,6 @@ export const updateShop = async (
   id,
   data
 ) => {
-
   const res = await API.put(
     `shops/${id}/`,
     data,
@@ -166,7 +175,9 @@ export const updateShop = async (
   return res.data;
 };
 
-export const deleteShop = async (id) => {
+export const deleteShop = async (
+  id
+) => {
   const res = await API.delete(
     `shops/${id}/`
   );
@@ -177,11 +188,9 @@ export const deleteShop = async (id) => {
 // ============================
 // 🧺 SERVICES
 // ============================
-
 export const getServices = async (
   shopId = null
 ) => {
-
   let url = "services/";
 
   if (shopId) {
@@ -196,7 +205,6 @@ export const getServices = async (
 export const createService = async (
   data
 ) => {
-
   const res = await API.post(
     "services/",
     data
@@ -208,17 +216,13 @@ export const createService = async (
 // ============================
 // 📦 ORDERS
 // ============================
-
-// ACTIVE CUSTOMER ORDERS
 export const getOrders = async () => {
   const res = await API.get("orders/");
   return res.data;
 };
 
-// ACTIVE OWNER ORDERS
 export const getOwnerOrders =
   async () => {
-
     const res = await API.get(
       "owner/orders/"
     );
@@ -226,10 +230,8 @@ export const getOwnerOrders =
     return res.data;
   };
 
-// ARCHIVED CUSTOMER ORDERS
 export const getArchivedOrders =
   async () => {
-
     const res = await API.get(
       "orders/archived/"
     );
@@ -237,10 +239,8 @@ export const getArchivedOrders =
     return res.data;
   };
 
-// ARCHIVED OWNER ORDERS
 export const getArchivedOwnerOrders =
   async () => {
-
     const res = await API.get(
       "owner/orders/archived/"
     );
@@ -251,7 +251,6 @@ export const getArchivedOwnerOrders =
 export const createOrder = async (
   data
 ) => {
-
   const res = await API.post(
     "orders/",
     data
@@ -262,22 +261,17 @@ export const createOrder = async (
 
 export const updateOrderStatus =
   async (id, status) => {
-
     const res = await API.put(
       `orders/${id}/status/`,
-      {
-        status,
-      }
+      { status }
     );
 
     return res.data;
   };
 
-// ARCHIVE ORDER
 export const archiveOrder = async (
   id
 ) => {
-
   const res = await API.put(
     `orders/${id}/archive/`
   );
@@ -288,18 +282,321 @@ export const archiveOrder = async (
 // ============================
 // ⭐ FEATURED SHOPS
 // ============================
-
 export const getFeaturedShops =
   async () => {
-
     const res = await API.get(
-      "/featured-shops/"
+      "featured-shops/"
     );
 
     return res.data;
   };
 
 export default API;
+
+
+
+// import axios from "axios";
+
+// // ============================
+// // 🌍 BASE URL
+// // ============================
+// const BASE_URL = import.meta.env.VITE_API_URL;
+
+// if (!BASE_URL) {
+//   throw new Error(
+//     "VITE_API_URL is missing. Check your .env files."
+//   );
+// }
+
+// // ============================
+// // 🚀 API INSTANCE
+// // ============================
+// const API = axios.create({
+//   baseURL: `${BASE_URL}/api/`,
+// });
+
+// // ============================
+// // 🔐 ATTACH ACCESS TOKEN
+// // ============================
+// API.interceptors.request.use(
+//   (config) => {
+//     const token = localStorage.getItem("access");
+
+//     if (token) {
+//       config.headers.Authorization = `Bearer ${token}`;
+//     }
+
+//     return config;
+//   },
+//   (error) => Promise.reject(error)
+// );
+
+// // ============================
+// // 🔁 AUTO REFRESH TOKEN
+// // ============================
+// API.interceptors.response.use(
+//   (response) => response,
+
+//   async (error) => {
+//     const originalRequest = error.config;
+
+//     if (
+//       error.response?.status === 401 &&
+//       !originalRequest._retry
+//     ) {
+//       originalRequest._retry = true;
+
+//       try {
+//         const refresh = localStorage.getItem("refresh");
+
+//         if (!refresh) {
+//           throw error;
+//         }
+
+//         const response = await axios.post(
+//           `${BASE_URL}/api/token/refresh/`,
+//           {
+//             refresh,
+//           }
+//         );
+
+//         const newAccess = response.data.access;
+
+//         localStorage.setItem("access", newAccess);
+
+//         API.defaults.headers.common[
+//           "Authorization"
+//         ] = `Bearer ${newAccess}`;
+
+//         originalRequest.headers[
+//           "Authorization"
+//         ] = `Bearer ${newAccess}`;
+
+//         return API(originalRequest);
+
+//       } catch (refreshError) {
+
+//         localStorage.removeItem("access");
+//         localStorage.removeItem("refresh");
+//         localStorage.removeItem("user");
+
+//         window.location.href = "/login";
+
+//         return Promise.reject(refreshError);
+//       }
+//     }
+
+//     return Promise.reject(error);
+//   }
+// );
+
+// // ============================
+// // 🔐 AUTH
+// // ============================
+
+// export const registerUser = async (data) => {
+//   const res = await API.post("register/", data);
+//   return res.data;
+// };
+
+// export const loginUser = async (
+//   username,
+//   password
+// ) => {
+//   const res = await API.post("login/", {
+//     username,
+//     password,
+//   });
+
+//   return res.data;
+// };
+
+// // ============================
+// // 🏪 SHOPS
+// // ============================
+
+// export const getShops = async () => {
+//   const res = await API.get("shops/");
+//   return res.data;
+// };
+
+// export const getShop = async (id) => {
+//   const res = await API.get(
+//     `shops/${id}/`
+//   );
+
+//   return res.data;
+// };
+
+// export const createShop = async (data) => {
+
+//   const res = await API.post(
+//     "shops/",
+//     data,
+//     {
+//       headers: {
+//         "Content-Type":
+//           "multipart/form-data",
+//       },
+//     }
+//   );
+
+//   return res.data;
+// };
+
+// export const updateShop = async (
+//   id,
+//   data
+// ) => {
+
+//   const res = await API.put(
+//     `shops/${id}/`,
+//     data,
+//     {
+//       headers: {
+//         "Content-Type":
+//           "multipart/form-data",
+//       },
+//     }
+//   );
+
+//   return res.data;
+// };
+
+// export const deleteShop = async (id) => {
+//   const res = await API.delete(
+//     `shops/${id}/`
+//   );
+
+//   return res.data;
+// };
+
+// // ============================
+// // 🧺 SERVICES
+// // ============================
+
+// export const getServices = async (
+//   shopId = null
+// ) => {
+
+//   let url = "services/";
+
+//   if (shopId) {
+//     url += `?shop=${shopId}`;
+//   }
+
+//   const res = await API.get(url);
+
+//   return res.data;
+// };
+
+// export const createService = async (
+//   data
+// ) => {
+
+//   const res = await API.post(
+//     "services/",
+//     data
+//   );
+
+//   return res.data;
+// };
+
+// // ============================
+// // 📦 ORDERS
+// // ============================
+
+// // ACTIVE CUSTOMER ORDERS
+// export const getOrders = async () => {
+//   const res = await API.get("orders/");
+//   return res.data;
+// };
+
+// // ACTIVE OWNER ORDERS
+// export const getOwnerOrders =
+//   async () => {
+
+//     const res = await API.get(
+//       "owner/orders/"
+//     );
+
+//     return res.data;
+//   };
+
+// // ARCHIVED CUSTOMER ORDERS
+// export const getArchivedOrders =
+//   async () => {
+
+//     const res = await API.get(
+//       "orders/archived/"
+//     );
+
+//     return res.data;
+//   };
+
+// // ARCHIVED OWNER ORDERS
+// export const getArchivedOwnerOrders =
+//   async () => {
+
+//     const res = await API.get(
+//       "owner/orders/archived/"
+//     );
+
+//     return res.data;
+//   };
+
+// export const createOrder = async (
+//   data
+// ) => {
+
+//   const res = await API.post(
+//     "orders/",
+//     data
+//   );
+
+//   return res.data;
+// };
+
+// export const updateOrderStatus =
+//   async (id, status) => {
+
+//     const res = await API.put(
+//       `orders/${id}/status/`,
+//       {
+//         status,
+//       }
+//     );
+
+//     return res.data;
+//   };
+
+// // ARCHIVE ORDER
+// export const archiveOrder = async (
+//   id
+// ) => {
+
+//   const res = await API.put(
+//     `orders/${id}/archive/`
+//   );
+
+//   return res.data;
+// };
+
+// // ============================
+// // ⭐ FEATURED SHOPS
+// // ============================
+
+// export const getFeaturedShops =
+//   async () => {
+
+//     const res = await API.get(
+//       "/featured-shops/"
+//     );
+
+//     return res.data;
+//   };
+
+// export default API;
 
 
 
