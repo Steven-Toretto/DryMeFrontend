@@ -20,11 +20,11 @@ function Shops() {
   // =========================
   // FETCH SHOPS
   // =========================
-  useEffect(() => {
-    if (token === undefined) return;
+useEffect(() => {
+  if (!token) return;
 
-    fetchShops();
-  }, [token]);
+  fetchShops();
+}, [token]);
 
   const fetchShops = async () => {
     try {
@@ -183,22 +183,16 @@ function Shops() {
             // =========================
             // IMAGE URL FIX
             // =========================
-            let imageUrl = "";
+            // =========================
+// IMAGE URL FIX
+// =========================
+let imageUrl = "";
 
-            if (shop.image) {
-
-              // Cloudinary image
-              if (shop.image.startsWith("http")) {
-                imageUrl = shop.image;
-
-              } else {
-
-                // Local media image
-                imageUrl = `${
-                  import.meta.env.VITE_API_URL
-                }${shop.image}`;
-              }
-            }
+if (shop.image) {
+  imageUrl = shop.image?.startsWith("http")
+    ? shop.image
+    : `${import.meta.env.VITE_API_URL}${shop.image}`;
+}
 
             return (
               <div
