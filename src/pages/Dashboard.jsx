@@ -33,6 +33,16 @@ const Dashboard = () => {
 
   const role = user?.role;
 
+  // greeting msg
+  const hour = new Date().getHours();
+
+const greeting =
+  hour < 12
+    ? "Good Morning"
+    : hour < 18
+    ? "Good Afternoon"
+    : "Welcome";
+
 
   const [shops, setShops] = useState([]);
   const [orders, setOrders] = useState([]);
@@ -412,7 +422,7 @@ const Dashboard = () => {
         <div className="mb-8">
 
           <h1 className="text-3xl font-extrabold text-gray-800">
-  Welcome{" "}
+  {greeting},{" "}
   {user?.username?.charAt(0).toUpperCase() +
     user?.username?.slice(1)}
 </h1>
