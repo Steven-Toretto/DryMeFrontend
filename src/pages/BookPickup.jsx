@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { createOrder, getShops, getServices } from "../api";
 
 function BookPickup() {
@@ -8,6 +8,12 @@ function BookPickup() {
   const [shops, setShops] = useState([]);
   const [services, setServices] = useState([]);
 
+  // book again btn
+  const [searchParams] = useSearchParams();
+
+  const shopId = searchParams.get("shop");
+  const serviceId = searchParams.get("service");
+
   const [form, setForm] = useState({
     shop: "",
     service: "",
@@ -15,6 +21,25 @@ function BookPickup() {
   });
 
   const [price, setPrice] = useState(0);
+
+  // book again btn
+  useEffect(() => {
+  if (shopId) {
+    setForm((prev) => ({
+      ...prev,
+      shop: shopId,
+    }));
+  }
+}, [shopId]);
+
+useEffect(() => {
+  if (serviceId) {
+    setForm((prev) => ({
+      ...prev,
+      service: serviceId,
+    }));
+  }
+}, [serviceId]);
 
   // =========================
   // 📡 FETCH SHOPS

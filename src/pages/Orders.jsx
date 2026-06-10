@@ -4,6 +4,8 @@ import {
   useContext,
 } from "react";
 
+import {useNavigate} from "react-router-dom";
+
 import {
   getOrders,
   getOwnerOrders,
@@ -39,6 +41,10 @@ function Orders() {
 
   const [activeTab, setActiveTab] =
     useState("active");
+
+    // book again button
+
+    const navigate = useNavigate();
 
   // =========================
   // FETCH ORDERS
@@ -194,6 +200,14 @@ function Orders() {
           err.message
         );
       }
+    };
+
+    // book again btn
+
+    const handleBookAgain = (order) =>{
+      navigate(
+        `/book-pickup?shop=${order.shop.id}&service=${order.service.id}&weight=${order.weight}`
+      );
     };
 
   // =========================
@@ -536,6 +550,26 @@ function Orders() {
                   </div>
 
                 )}
+
+                {/* BOOK AGAIN */}
+{role === "customer" &&
+ activeTab === "archived" && (
+
+  <div className="mt-4">
+
+    <button
+      onClick={() =>
+        handleBookAgain(order)
+      }
+      className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white"
+    >
+      Book Again
+    </button>
+
+  </div>
+
+)}
+
 
                 {/* FOOTER */}
                 <div className="mt-4 text-xs text-gray-400">

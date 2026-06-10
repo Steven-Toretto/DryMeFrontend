@@ -59,10 +59,10 @@ function Hero() {
             <span className="text-white">Real-time Tracking</span>
           </div>
 
-          {/* <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <FaCreditCard className="text-green-400" />
             <span>Easy Payments</span>
-          </div> */}
+          </div>
 
           <div className="flex items-center gap-2">
             <FaTshirt className="text-blue-400" />

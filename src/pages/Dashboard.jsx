@@ -33,6 +33,7 @@ const Dashboard = () => {
 
   const role = user?.role;
 
+
   const [shops, setShops] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -411,8 +412,10 @@ const Dashboard = () => {
         <div className="mb-8">
 
           <h1 className="text-3xl font-extrabold text-gray-800">
-            Welcome {user?.username}
-          </h1>
+  Welcome{" "}
+  {user?.username?.charAt(0).toUpperCase() +
+    user?.username?.slice(1)}
+</h1>
 
           <p className="text-gray-500 mt-1">
             Manage your laundry business
