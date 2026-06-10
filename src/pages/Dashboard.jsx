@@ -37,11 +37,22 @@ const Dashboard = () => {
   const hour = new Date().getHours();
 
 const greeting =
-  hour < 12
+  hour >= 5 && hour < 12
     ? "Good Morning"
-    : hour < 18
+    : hour >= 12 && hour < 17
     ? "Good Afternoon"
+    : hour >= 17 && hour < 21
+    ? "Good Evening"
     : "Welcome";
+
+const colorClass = 
+  hour >= 5 && hour < 12
+  ? "text-yellow-500"
+  : hour >= 12 && hour < 17
+  ? "text-blue-500"
+  : hour >= 17 && hour < 21
+  ? "text-orange-500"
+  : "text-gray-400"
 
 
   const [shops, setShops] = useState([]);
@@ -421,7 +432,7 @@ const greeting =
         {/* HEADER */}
         <div className="mb-8">
 
-          <h1 className="text-3xl font-extrabold text-gray-800">
+          <h1 className={`text-3xl font-extrabold ${colorClass}`}>
   {greeting},{" "}
   {user?.username?.charAt(0).toUpperCase() +
     user?.username?.slice(1)}
