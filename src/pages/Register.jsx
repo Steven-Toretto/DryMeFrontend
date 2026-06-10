@@ -7,10 +7,11 @@ function Register() {
 
   const [form, setForm] = useState({
     username: "",
+    email: "",
     password: "",
     confirmPassword: "",
     role: "customer",
-    phone: "",          
+    phone: "",
   });
 
   const [error, setError] = useState("");
@@ -32,10 +33,11 @@ function Register() {
     try {
       await registerUser({
         username: form.username,
+        email: form.email,
         password: form.password,
         role: form.role,
-        phone: form.phone,           // ✅ ADDED
-        location: form.location,     // ✅ ADDED
+        phone: form.phone,
+        location: form.location,
       });
 
       setSuccess("Account created successfully! Redirecting to login...");
@@ -45,6 +47,7 @@ function Register() {
       if (err.response?.data) {
         const data = err.response.data;
         if (data.username) setError(data.username[0]);
+        else if (data.email) setError(data.email[0]);
         else if (data.password) setError(data.password[0]);
         else if (data.role) setError(data.role[0]);
         else setError("Registration failed. Try again.");
@@ -106,6 +109,22 @@ function Register() {
             onChange={(e) => setForm({ ...form, username: e.target.value })}
             required
             autoComplete="username"
+            aria-required="true"
+          />
+
+          {/* Email */}
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+            Email Address
+          </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="you@example.com"
+            className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            required
+            autoComplete="email"
             aria-required="true"
           />
 
