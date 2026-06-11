@@ -60,19 +60,21 @@ function ShopDetails() {
       // =========================
       // SHOP
       // =========================
+      // shopData is a single object (getShop), not paginated
       setShop(shopData);
 
       // =========================
       // SERVICES
       // =========================
-      setServices(servicesData);
+      const services = servicesData.results ?? servicesData;
+      setServices(services);
 
       // =========================
       // AUTO SELECT FIRST SERVICE
       // =========================
-      if (servicesData.length > 0) {
+      if (services.length > 0) {
 
-        const firstService = servicesData[0];
+        const firstService = services[0];
 
         setSelectedService(firstService.id);
 

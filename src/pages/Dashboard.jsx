@@ -37,22 +37,11 @@ const Dashboard = () => {
   const hour = new Date().getHours();
 
 const greeting =
-  hour >= 5 && hour < 12
+  hour < 12
     ? "Good Morning"
-    : hour >= 12 && hour < 17
+    : hour < 18
     ? "Good Afternoon"
-    : hour >= 17 && hour < 21
-    ? "Good Evening"
     : "Welcome";
-
-const colorClass = 
-  hour >= 5 && hour < 12
-  ? "text-yellow-500"
-  : hour >= 12 && hour < 17
-  ? "text-blue-500"
-  : hour >= 17 && hour < 21
-  ? "text-orange-500"
-  : "text-gray-400"
 
 
   const [shops, setShops] = useState([]);
@@ -105,7 +94,7 @@ const colorClass =
     const interval = setInterval(async () => {
       try {
         const updatedOrders = await getOwnerOrders();
-        setOrders(updatedOrders);
+        setOrders(updatedOrders.results ?? updatedOrders);
       } catch (error) {
         console.error("Auto refresh failed:", error);
       }
@@ -138,8 +127,9 @@ const colorClass =
   const fetchShops = async () => {
     try {
       const data = await getShops();
+      const results = data.results ?? data;
 
-      const ownerShops = data.filter(
+      const ownerShops = results.filter(
         (shop) => shop.owner === user?.username
       );
 
@@ -155,7 +145,7 @@ const colorClass =
   const fetchOrders = async () => {
     try {
       const data = await getOwnerOrders();
-      setOrders(data);
+      setOrders(data.results ?? data);
     } catch (error) {
       console.error("Fetch orders error:", error);
     }
@@ -432,7 +422,7 @@ const colorClass =
         {/* HEADER */}
         <div className="mb-8">
 
-          <h1 className={`text-3xl font-extrabold ${colorClass}`}>
+          <h1 className="text-3xl font-extrabold text-gray-800">
   {greeting},{" "}
   {user?.username?.charAt(0).toUpperCase() +
     user?.username?.slice(1)}
@@ -823,6 +813,3 @@ const colorClass =
 };
 
 export default Dashboard;
-
-
-

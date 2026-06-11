@@ -30,7 +30,8 @@ function Login() {
 
         // CUSTOMER → CHECK ORDERS
         try {
-          const orders = await getOrders();
+          const data = await getOrders();
+          const orders = data.results ?? data;
 
           if (orders.length > 0) {
             navigate("/orders", { replace: true });
@@ -87,7 +88,8 @@ function Login() {
         // CUSTOMER REDIRECT LOGIC
         // =========================
         try {
-          const orders = await getOrders();
+          const ordersData = await getOrders();
+          const orders = ordersData.results ?? ordersData;
 
           setTimeout(() => {
 
