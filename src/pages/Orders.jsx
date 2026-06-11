@@ -86,7 +86,8 @@ function Orders() {
             : await getOrders();
       }
 
-      setOrders(data);
+      // ✅ Handle paginated response from DRF
+      setOrders(data.results ?? data);
 
     } catch (error) {
 
@@ -593,4 +594,5 @@ function Orders() {
 }
 
 export default Orders;
+
 

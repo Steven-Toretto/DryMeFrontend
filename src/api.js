@@ -127,9 +127,9 @@ export const loginUser = async (
 // ============================
 // 🏪 SHOPS
 // ============================
-export const getShops = async () => {
-  const res = await API.get("shops/");
-  return res.data;
+export const getShops = async (page = 1) => {
+  const res = await API.get(`shops/?page=${page}`);
+  return res.data; // { count, next, previous, results: [...] }
 };
 
 export const getShop = async (id) => {
@@ -161,7 +161,9 @@ export const updateShop = async (
   id,
   data
 ) => {
-  const res = await API.put(
+  // ✅ PATCH instead of PUT — only sends changed fields,
+  // so existing Cloudinary image is not wiped when no new image is selected
+  const res = await API.patch(
     `shops/${id}/`,
     data,
     {
@@ -189,17 +191,18 @@ export const deleteShop = async (
 // 🧺 SERVICES
 // ============================
 export const getServices = async (
-  shopId = null
+  shopId = null,
+  page = 1
 ) => {
-  let url = "services/";
+  let url = `services/?page=${page}`;
 
   if (shopId) {
-    url += `?shop=${shopId}`;
+    url += `&shop=${shopId}`;
   }
 
   const res = await API.get(url);
 
-  return res.data;
+  return res.data; // { count, next, previous, results: [...] }
 };
 
 export const createService = async (
@@ -216,27 +219,27 @@ export const createService = async (
 // ============================
 // 📦 ORDERS
 // ============================
-export const getOrders = async () => {
-  const res = await API.get("orders/");
-  return res.data;
+export const getOrders = async (page = 1) => {
+  const res = await API.get(`orders/?page=${page}`);
+  return res.data; // { count, next, previous, results: [...] }
 };
 
 export const getOwnerOrders =
-  async () => {
+  async (page = 1) => {
     const res = await API.get(
-      "owner/orders/"
+      `owner/orders/?page=${page}`
     );
 
-    return res.data;
+    return res.data; // { count, next, previous, results: [...] }
   };
 
 export const getArchivedOrders =
-  async () => {
+  async (page = 1) => {
     const res = await API.get(
-      "orders/archived/"
+      `orders/archived/?page=${page}`
     );
 
-    return res.data;
+    return res.data; // { count, next, previous, results: [...] }
   };
 
 export const getArchivedOwnerOrders =
@@ -292,6 +295,5 @@ export const getFeaturedShops =
   };
 
 export default API;
-
 
 

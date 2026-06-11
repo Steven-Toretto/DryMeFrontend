@@ -26,13 +26,18 @@ useEffect(() => {
   fetchShops();
 }, [token]);
 
-  const fetchShops = async () => {
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const fetchShops = async (pageNum = 1) => {
     try {
       setLoading(true);
 
-      const data = await getShops();
+      const data = await getShops(pageNum);
 
-      setShops(data);
+      // ✅ DRF pagination returns { count, next, previous, results }
+      setShops(data.results ?? data);
+      setTotalPages(Math.ceil((data.count ?? data.length) / 10));
 
     } catch (error) {
       console.error("Fetch shops error:", error);
@@ -309,5 +314,6 @@ if (shop.image) {
 }
 
 export default Shops;
+
 
 

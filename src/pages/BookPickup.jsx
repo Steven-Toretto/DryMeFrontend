@@ -70,13 +70,11 @@ useEffect(() => {
 
   const fetchServices = async (shopId) => {
     try {
-      const data = await getServices();
+      const data = await getServices(shopId);
 
-      const filtered = data.filter(
-        (service) => service.shop === parseInt(shopId)
-      );
-
-      setServices(filtered);
+      // ✅ Handle paginated response from DRF
+      const results = data.results ?? data;
+      setServices(results);
     } catch (err) {
       console.error("Failed to load services");
     }
@@ -221,5 +219,9 @@ useEffect(() => {
 }
 
 export default BookPickup;
+
+
+
+
 
 
