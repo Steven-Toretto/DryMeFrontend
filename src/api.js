@@ -214,6 +214,17 @@ export const createService = async (
   );
 
   return res.data;
+ 
+};
+
+export const updateService = async (id, data)=>{
+  const res = await API.patch(`services/${id}/`, data);
+  return res.data;
+};
+
+export const deleteService = async (id)=>{
+  const res = await API.delete(`service/${id}/`);
+  return res.data;
 };
 
 // ============================
@@ -295,5 +306,3 @@ export const getFeaturedShops =
   };
 
 export default API;
-
-

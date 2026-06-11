@@ -3,6 +3,9 @@ import {
   createShop,
   getShops,
   createService,
+  updateService,
+  deleteService,
+  getServices,
   getOwnerOrders,
   deleteShop,
 } from "../api";
@@ -37,11 +40,22 @@ const Dashboard = () => {
   const hour = new Date().getHours();
 
 const greeting =
-  hour < 12
-    ? "Good Morning"
-    : hour < 18
-    ? "Good Afternoon"
+  hour >=5 && hour < 12
+    ? "Good morning"
+    : hour >=12 && hour < 17
+    ? "Good afternoon"
+    : hour >=17 && hour < 21
+    ? "Good evening" 
     : "Welcome";
+
+const changeColor = 
+  hour >= 5 && hour < 12
+  ? "text-yellow-500"
+  : hour >=12 && hour < 17
+  ? "text-blue-500"
+  : hour >=17 && hour < 21
+  ? "text-orange-500"
+  : "text-gray-400"
 
 
   const [shops, setShops] = useState([]);
@@ -65,6 +79,9 @@ const greeting =
 
   const [shopMessage, setShopMessage] = useState("");
   const [serviceMessage, setServiceMessage] = useState("");
+  const [shopServices, setShopServices] = useState({});  // { shopId: [services] }
+  const [editingService, setEditingService] = useState(null); // { id, name, price_per_kg }
+  const [editServiceMessage, setEditServiceMessage] = useState("");
 
   // =========================
   // AUTH CHECK
@@ -247,6 +264,52 @@ const greeting =
   };
 
   // =========================
+  // FETCH SERVICES FOR A SHOP
+  // =========================
+  const fetchShopServices = async (shopId) => {
+    try {
+      const data = await getServices(shopId);
+      const results = data.results ?? data;
+      setShopServices(prev => ({ ...prev, [shopId]: results }));
+    } catch (err) {
+      console.error("Failed to load services", err);
+    }
+  };
+
+  // =========================
+  // EDIT SERVICE
+  // =========================
+  const handleEditService = async (serviceId, shopId) => {
+    if (!editingService) return;
+    try {
+      await updateService(serviceId, {
+        name: editingService.name,
+        price_per_kg: editingService.price_per_kg,
+      });
+      setEditServiceMessage("Service updated!");
+      setEditingService(null);
+      fetchShopServices(shopId);
+      setTimeout(() => setEditServiceMessage(""), 2000);
+    } catch (err) {
+      setEditServiceMessage("Failed to update service.");
+    }
+  };
+
+  // =========================
+  // DELETE SERVICE
+  // =========================
+  const handleDeleteService = async (serviceId, shopId) => {
+    if (!window.confirm("Delete this service? This cannot be undone.")) return;
+    try {
+      await deleteService(serviceId);
+      fetchShopServices(shopId);
+    } catch (err) {
+      const msg = err.response?.data?.error || "Failed to delete service.";
+      alert(msg);
+    }
+  };
+
+  // =========================
   // LOGOUT
   // =========================
   const handleLogout = () => {
@@ -422,7 +485,7 @@ const greeting =
         {/* HEADER */}
         <div className="mb-8">
 
-          <h1 className="text-3xl font-extrabold text-gray-800">
+          <h1 className={`text-3xl font-extrabold ${changeColor}`}>
   {greeting},{" "}
   {user?.username?.charAt(0).toUpperCase() +
     user?.username?.slice(1)}
@@ -602,6 +665,79 @@ const greeting =
                       <p className="text-gray-600 text-sm mt-3">
                         {shop.description}
                       </p>
+
+                      {/* SERVICES LIST */}
+                      <div className="mt-4 border-t pt-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-sm font-semibold text-gray-700">Services</p>
+                          <button
+                            onClick={() => fetchShopServices(shop.id)}
+                            className="text-xs text-blue-500 hover:underline"
+                          >
+                            Load Services
+                          </button>
+                        </div>
+
+                        {editServiceMessage && (
+                          <p className="text-xs text-green-600 mb-2">{editServiceMessage}</p>
+                        )}
+
+                        {(shopServices[shop.id] || []).map((service) => (
+                          <div key={service.id} className="mb-2">
+                            {editingService?.id === service.id ? (
+                              /* EDIT MODE */
+                              <div className="flex gap-2 items-center">
+                                <input
+                                  type="text"
+                                  value={editingService.name}
+                                  onChange={(e) => setEditingService({ ...editingService, name: e.target.value })}
+                                  className="border rounded px-2 py-1 text-xs flex-1"
+                                />
+                                <input
+                                  type="number"
+                                  value={editingService.price_per_kg}
+                                  onChange={(e) => setEditingService({ ...editingService, price_per_kg: e.target.value })}
+                                  className="border rounded px-2 py-1 text-xs w-20"
+                                />
+                                <button
+                                  onClick={() => handleEditService(service.id, shop.id)}
+                                  className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  onClick={() => setEditingService(null)}
+                                  className="text-xs text-gray-500 hover:underline"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
+                              /* VIEW MODE */
+                              <div className="flex items-center justify-between bg-gray-50 rounded px-3 py-2">
+                                <div>
+                                  <span className="text-sm font-medium text-gray-800">{service.name}</span>
+                                  <span className="text-xs text-gray-500 ml-2">KES {service.price_per_kg}/kg</span>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => setEditingService({ id: service.id, name: service.name, price_per_kg: service.price_per_kg })}
+                                    className="text-xs text-blue-500 hover:underline"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteService(service.id, shop.id)}
+                                    className="text-xs text-red-500 hover:underline"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
 
                     </div>
 
