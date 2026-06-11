@@ -51,7 +51,7 @@ useEffect(() => {
   const fetchShops = async () => {
     try {
       const data = await getShops();
-      setShops(data);
+      setShops(data.results ?? data);
     } catch (err) {
       console.error("Failed to load shops");
     }
@@ -219,9 +219,5 @@ useEffect(() => {
 }
 
 export default BookPickup;
-
-
-
-
 
 
