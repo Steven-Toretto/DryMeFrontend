@@ -180,9 +180,16 @@ function Orders() {
   // =========================
   // AUTO REFRESH
   // =========================
+  // Only auto-refresh if there is a pending payment order
   useEffect(() => {
 
     if (!token || !role) return;
+
+    const hasPendingPayment = orders.some(
+      (o) => o.payment_status === "pending_payment"
+    );
+
+    if (!hasPendingPayment) return;
 
     const interval =
       setInterval(() => {
@@ -197,7 +204,8 @@ function Orders() {
   }, [
     token,
     role,
-    activeTab
+    activeTab,
+    orders
   ]);
 
   // =========================
