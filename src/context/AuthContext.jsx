@@ -45,6 +45,8 @@ const AuthProvider = ({ children }) => {
 
     // Build user object
     const userData = {
+      id: data.id,
+      email: data.email,
       username: data.username,
       role: data.role,
       profile_image: data.profile_image || null,
