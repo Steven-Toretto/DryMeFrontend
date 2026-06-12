@@ -13,6 +13,8 @@ import {
   getArchivedOwnerOrders,
   updateOrderStatus,
   archiveOrder,
+  initiatePayment,
+  checkPaymentStatus,
 } from "../api";
 
 import {
@@ -42,9 +44,64 @@ function Orders() {
   const [activeTab, setActiveTab] =
     useState("active");
 
-    // book again button
+  const [payingOrderId, setPayingOrderId] = useState(null);
+  const [paymentMessage, setPaymentMessage] = useState("");
+  const [pollingOrderId, setPollingOrderId] = useState(null);
 
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+
+  // ===========================
+  // INITIATE MPESA PAYMENT
+  // ===========================
+  const handlePay = async (orderId) => {
+    try {
+      setPayingOrderId(orderId);
+      setPaymentMessage("");
+      const res = await initiatePayment(orderId);
+      setPaymentMessage(res.message || "Payment prompt sent to your phone!");
+      // Start polling for payment confirmation
+      startPolling(orderId);
+    } catch (err) {
+      const msg = err.response?.data?.error || "Payment initiation failed.";
+      setPaymentMessage(msg);
+    } finally {
+      setPayingOrderId(null);
+    }
+  };
+
+  // ===========================
+  // POLL PAYMENT STATUS
+  // ===========================
+  const startPolling = (orderId) => {
+    setPollingOrderId(orderId);
+    let attempts = 0;
+    const maxAttempts = 10; // poll for ~30 seconds
+
+    const interval = setInterval(async () => {
+      attempts++;
+      try {
+        const res = await checkPaymentStatus(orderId);
+        if (res.payment_status === "paid") {
+          setPaymentMessage(`✅ Payment confirmed! M-Pesa code: ${res.mpesa_transaction_code}`);
+          clearInterval(interval);
+          setPollingOrderId(null);
+          // Refresh orders to show updated status
+          fetchOrders();
+        } else if (res.payment_status === "failed") {
+          setPaymentMessage("❌ Payment failed or was cancelled. Try again.");
+          clearInterval(interval);
+          setPollingOrderId(null);
+        } else if (attempts >= maxAttempts) {
+          setPaymentMessage("⏳ Payment pending. Check back shortly.");
+          clearInterval(interval);
+          setPollingOrderId(null);
+        }
+      } catch (err) {
+        clearInterval(interval);
+        setPollingOrderId(null);
+      }
+    }, 3000);
+  };
 
   // =========================
   // FETCH ORDERS
@@ -378,6 +435,55 @@ function Orders() {
 
                 </div>
 
+                {/* PAYMENT SECTION — CUSTOMER ONLY */}
+                {role === "customer" && activeTab === "active" && (
+                  <div className="mt-4 border-t pt-3">
+
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-gray-500">Payment</span>
+                      <span className={
+                        order.payment_status === "paid"
+                          ? "text-xs font-semibold px-2 py-1 rounded-full bg-green-100 text-green-700"
+                          : order.payment_status === "pending_payment"
+                          ? "text-xs font-semibold px-2 py-1 rounded-full bg-yellow-100 text-yellow-700"
+                          : order.payment_status === "failed"
+                          ? "text-xs font-semibold px-2 py-1 rounded-full bg-red-100 text-red-700"
+                          : "text-xs font-semibold px-2 py-1 rounded-full bg-gray-100 text-gray-600"
+                      }>
+                        {order.payment_status === "paid" && "Paid"}
+                        {order.payment_status === "pending_payment" && "Pending"}
+                        {order.payment_status === "failed" && "Failed"}
+                        {order.payment_status === "unpaid" && "Unpaid"}
+                      </span>
+                    </div>
+
+                    {order.payment_status === "paid" && order.mpesa_transaction_code && (
+                      <p className="text-xs text-green-600 mb-2">
+                        M-Pesa Code: <strong>{order.mpesa_transaction_code}</strong>
+                      </p>
+                    )}
+
+                    {(order.payment_status === "unpaid" || order.payment_status === "failed") && (
+                      <button
+                        onClick={() => handlePay(order.id)}
+                        disabled={payingOrderId === order.id || pollingOrderId === order.id}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-semibold py-2 rounded-lg transition disabled:opacity-50"
+                      >
+                        {payingOrderId === order.id
+                          ? "Sending prompt..."
+                          : pollingOrderId === order.id
+                          ? "Waiting for payment..."
+                          : "Pay with M-Pesa"}
+                      </button>
+                    )}
+
+                    {paymentMessage && (
+                      <p className="text-xs text-gray-600 mt-2 text-center">{paymentMessage}</p>
+                    )}
+
+                  </div>
+                )}
+
                 {/* OWNER INFO */}
                 {role === "owner" && (
 
@@ -594,5 +700,3 @@ function Orders() {
 }
 
 export default Orders;
-
-
