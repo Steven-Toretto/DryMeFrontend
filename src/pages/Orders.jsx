@@ -54,17 +54,15 @@ function Orders() {
   // INITIATE MPESA PAYMENT
   // ===========================
   const handlePay = async (orderId) => {
+    setPaymentMessage("");
+    setPayingOrderId(orderId);
     try {
-      setPayingOrderId(orderId);
-      setPaymentMessage("");
       const res = await initiatePayment(orderId);
       setPaymentMessage(res.message || "Payment prompt sent to your phone!");
-      // Start polling for payment confirmation
       startPolling(orderId);
     } catch (err) {
       const msg = err.response?.data?.error || "Payment initiation failed.";
       setPaymentMessage(msg);
-    } finally {
       setPayingOrderId(null);
     }
   };
@@ -82,19 +80,22 @@ function Orders() {
       try {
         const res = await checkPaymentStatus(orderId);
         if (res.payment_status === "paid") {
-          setPaymentMessage(`✅ Payment confirmed! M-Pesa code: ${res.mpesa_transaction_code}`);
+          setPaymentMessage("✅ Payment confirmed! M-Pesa code: " + res.mpesa_transaction_code);
           clearInterval(interval);
           setPollingOrderId(null);
-          // Refresh orders to show updated status
+          setPayingOrderId(null);
           fetchOrders();
         } else if (res.payment_status === "failed") {
-          setPaymentMessage("❌ Payment failed or was cancelled. Try again.");
+          setPaymentMessage("❌ Payment failed or cancelled. Click Pay to try again.");
           clearInterval(interval);
           setPollingOrderId(null);
+          setPayingOrderId(null);
+          fetchOrders();
         } else if (attempts >= maxAttempts) {
           setPaymentMessage("⏳ Payment pending. Check back shortly.");
           clearInterval(interval);
           setPollingOrderId(null);
+          setPayingOrderId(null);
         }
       } catch (err) {
         clearInterval(interval);
