@@ -81,9 +81,9 @@ function Login() {
 
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          {/* <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-xl mb-3">
+          <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-xl mb-3">
             <span className="text-blue-600 font-black text-2xl">D</span>
-          </div> */}
+          </div>
           <h1 className="text-white font-black text-3xl tracking-tight">DryMe</h1>
           <p className="text-blue-100/80 text-sm mt-1">Kenya's laundry marketplace</p>
         </div>
@@ -171,7 +171,7 @@ function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full py-3.5 rounded-xl text-white font-bold text-sm transition shadow-lg ${
+                className={`w-full py-3.5 cursor-pointer rounded-xl text-white font-bold text-sm transition shadow-lg ${
                   loading
                     ? "bg-blue-400 cursor-not-allowed"
                     : "bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 shadow-blue-100"
