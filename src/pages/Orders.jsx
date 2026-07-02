@@ -1,5 +1,10 @@
-import { useEffect, useState, useContext } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import {
+  useEffect,
+  useState,
+  useContext,
+} from "react";
+
+import {useNavigate} from "react-router-dom";
 
 import {
   getOrders,
@@ -13,26 +18,31 @@ import {
 } from "../api";
 
 import {
-  Phone,
-  MapPin,
-  Archive,
-  Package,
-  Droplets,
-  CheckCircle2,
-  Clock,
-  RotateCcw,
-  CreditCard,
-} from "lucide-react";
+  FaPhoneAlt,
+  FaMapMarkerAlt,
+  FaArchive,
+} from "react-icons/fa";
 
-import { AuthContext } from "../context/AuthContext";
+import { Link } from "react-router-dom";
+
+import { AuthContext }
+from "../context/AuthContext";
 
 function Orders() {
-  const { token, user } = useContext(AuthContext);
+
+  const { token, user } =
+    useContext(AuthContext);
+
   const role = user?.role;
 
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("active");
+  const [orders, setOrders] =
+    useState([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [activeTab, setActiveTab] =
+    useState("active");
 
   const [payingOrderId, setPayingOrderId] = useState(null);
   const [paymentMessage, setPaymentMessage] = useState("");
@@ -63,26 +73,26 @@ function Orders() {
   const startPolling = (orderId) => {
     setPollingOrderId(orderId);
     let attempts = 0;
-    const maxAttempts = 10;
+    const maxAttempts = 10; // poll for ~30 seconds
 
     const interval = setInterval(async () => {
       attempts++;
       try {
         const res = await checkPaymentStatus(orderId);
         if (res.payment_status === "paid") {
-          setPaymentMessage("Payment confirmed! M-Pesa code: " + res.mpesa_transaction_code);
+          setPaymentMessage("✅ Payment confirmed! M-Pesa code: " + res.mpesa_transaction_code);
           clearInterval(interval);
           setPollingOrderId(null);
           setPayingOrderId(null);
           fetchOrders();
         } else if (res.payment_status === "failed") {
-          setPaymentMessage("Payment failed or cancelled. Click Pay to try again.");
+          setPaymentMessage("❌ Payment failed or cancelled. Click Pay to try again.");
           clearInterval(interval);
           setPollingOrderId(null);
           setPayingOrderId(null);
           fetchOrders();
         } else if (attempts >= maxAttempts) {
-          setPaymentMessage("Payment pending. Check back shortly.");
+          setPaymentMessage("⏳ Payment pending. Check back shortly.");
           clearInterval(interval);
           setPollingOrderId(null);
           setPayingOrderId(null);
@@ -97,356 +107,640 @@ function Orders() {
   // =========================
   // FETCH ORDERS
   // =========================
-  const fetchOrders = async (showLoader = true) => {
-    try {
-      if (showLoader) setLoading(true);
+  const fetchOrders = async (
+    showLoader = true
+  ) => {
 
-      let data;
-      if (activeTab === "archived") {
-        data = role === "owner" ? await getArchivedOwnerOrders() : await getArchivedOrders();
-      } else {
-        data = role === "owner" ? await getOwnerOrders() : await getOrders();
+    try {
+
+      if (showLoader) {
+        setLoading(true);
       }
 
+      let data;
+
+      // =====================
+      // ARCHIVED ORDERS
+      // =====================
+      if (
+        activeTab === "archived"
+      ) {
+
+        data =
+          role === "owner"
+            ? await getArchivedOwnerOrders()
+            : await getArchivedOrders();
+
+      }
+
+      // =====================
+      // ACTIVE ORDERS
+      // =====================
+      else {
+
+        data =
+          role === "owner"
+            ? await getOwnerOrders()
+            : await getOrders();
+      }
+
+      // ✅ Handle paginated response from DRF
       setOrders(data.results ?? data);
+
     } catch (error) {
-      console.error("Fetch failed:", error.response?.data || error.message);
+
+      console.error(
+        "Fetch failed:",
+        error.response?.data ||
+        error.message
+      );
+
     } finally {
-      if (showLoader) setLoading(false);
+
+      if (showLoader) {
+        setLoading(false);
+      }
     }
   };
 
+  // =========================
+  // INITIAL FETCH
+  // =========================
   useEffect(() => {
-    if (!token || !role) return;
-    fetchOrders(true);
-  }, [token, role, activeTab]);
 
+    if (!token || !role) return;
+
+    fetchOrders(true);
+
+  }, [
+    token,
+    role,
+    activeTab
+  ]);
+
+  // =========================
+  // AUTO REFRESH
+  // =========================
   // Only auto-refresh if there is a pending payment order
   useEffect(() => {
+
     if (!token || !role) return;
-    const hasPendingPayment = orders.some((o) => o.payment_status === "pending_payment");
+
+    const hasPendingPayment = orders.some(
+      (o) => o.payment_status === "pending_payment"
+    );
+
     if (!hasPendingPayment) return;
 
-    const interval = setInterval(() => fetchOrders(false), 5000);
-    return () => clearInterval(interval);
-  }, [token, role, activeTab, orders]);
+    const interval =
+      setInterval(() => {
 
-  const handleStatusUpdate = async (id, status) => {
-    try {
-      await updateOrderStatus(id, status);
-      fetchOrders(false);
-    } catch (error) {
-      console.error("Update error:", error.response?.data || error.message);
-    }
-  };
+        fetchOrders(false);
 
-  const handleArchive = async (id) => {
-    const confirmArchive = window.confirm("Archive this order?");
-    if (!confirmArchive) return;
+      }, 5000);
 
-    try {
-      await archiveOrder(id);
-      setOrders((prev) => prev.filter((order) => order.id !== id));
-    } catch (err) {
-      console.error("Archive error:", err.response?.data || err.message);
-    }
-  };
+    return () =>
+      clearInterval(interval);
 
-  const handleBookAgain = (order) => {
-    navigate(`/book-pickup?shop=${order.shop.id}&service=${order.service.id}&weight=${order.weight}`);
-  };
+  }, [
+    token,
+    role,
+    activeTab,
+    orders
+  ]);
 
-  const getStatusConfig = (status) => {
-    switch (status) {
-      case "completed":
-        return { color: "bg-green-100 text-green-700", icon: <CheckCircle2 size={13} /> };
-      case "washing":
-        return { color: "bg-blue-100 text-blue-700", icon: <Droplets size={13} /> };
-      default:
-        return { color: "bg-orange-100 text-orange-700", icon: <Clock size={13} /> };
-    }
-  };
+  // =========================
+  // UPDATE STATUS
+  // =========================
+  const handleStatusUpdate =
+    async (id, status) => {
 
+      try {
+
+        await updateOrderStatus(
+          id,
+          status
+        );
+
+        fetchOrders(false);
+
+      } catch (error) {
+
+        console.error(
+          "Update error:",
+          error.response?.data ||
+          error.message
+        );
+      }
+    };
+
+  // =========================
+  // ARCHIVE ORDER
+  // =========================
+  const handleArchive =
+    async (id) => {
+
+      const confirmArchive =
+        window.confirm(
+          "Archive this order?"
+        );
+
+      if (!confirmArchive) return;
+
+      try {
+
+        await archiveOrder(id);
+
+        // remove instantly from UI
+        setOrders((prev) =>
+          prev.filter(
+            (order) =>
+              order.id !== id
+          )
+        );
+
+      } catch (err) {
+
+        console.error(
+          "Archive error:",
+          err.response?.data ||
+          err.message
+        );
+      }
+    };
+
+    // book again btn
+
+    const handleBookAgain = (order) =>{
+      navigate(
+        `/book-pickup?shop=${order.shop.id}&service=${order.service.id}&weight=${order.weight}`
+      );
+    };
+
+  // =========================
+  // STATUS STYLE
+  // =========================
+  const getStatusStyle =
+    (status) => {
+
+      switch (status) {
+
+        case "completed":
+          return "bg-green-100 text-green-700";
+
+        case "washing":
+          return "bg-yellow-100 text-yellow-700";
+
+        default:
+          return "bg-gray-100 text-gray-700";
+      }
+    };
+
+  // =========================
+  // LOADING
+  // =========================
   if (loading) {
+
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="animate-spin w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full" />
+      <div className="min-h-[50vh] flex items-center justify-center">
+
+        <div className="animate-spin w-10 h-10 border-4 border-blue-300 border-t-transparent rounded-full" />
+
       </div>
     );
   }
 
   return (
-    <div className="min-h-[80vh] bg-gray-50 py-10 px-4">
-      <div className="max-w-4xl mx-auto">
+
+    <div className="min-h-[80vh] bg-gray-100 py-10 px-4">
+
+      <div className="max-w-5xl mx-auto">
 
         {/* HEADER */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-black text-gray-900">
-              {role === "owner" ? "Shop Orders" : "My Orders"}
-            </h1>
-            <p className="text-gray-500 text-sm mt-0.5">
-              {orders.length} {orders.length === 1 ? "order" : "orders"}
-            </p>
-          </div>
-          <div className="hidden sm:flex w-11 h-11 rounded-xl bg-gradient-to-br from-blue-600 to-blue-500 items-center justify-center shadow-md shadow-blue-100">
-            <Package size={20} className="text-white" />
-          </div>
+        <div className="flex justify-between items-center mb-8">
+
+          <h2 className="text-3xl font-bold">
+
+            {role === "owner"
+              ? "Shop Orders"
+              : "My Orders"}
+
+          </h2>
+
+          <span className="text-gray-500 text-sm">
+
+            {orders.length} orders
+
+          </span>
+
         </div>
 
         {/* TABS */}
-        <div className="inline-flex bg-white border border-gray-100 rounded-xl p-1 mb-6 shadow-sm">
+        <div className="flex gap-3 mb-6">
+
           <button
-            onClick={() => setActiveTab("active")}
-            className={`px-5 py-2 rounded-lg text-sm font-semibold transition ${
+            onClick={() =>
+              setActiveTab(
+                "active"
+              )
+            }
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
               activeTab === "active"
-                ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
+                ? "bg-blue-600 text-white"
+                : "bg-white border text-gray-600"
             }`}
           >
             Active Orders
           </button>
+
           <button
-            onClick={() => setActiveTab("archived")}
-            className={`px-5 py-2 rounded-lg text-sm font-semibold transition ${
+            onClick={() =>
+              setActiveTab(
+                "archived"
+              )
+            }
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
               activeTab === "archived"
-                ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
+                ? "bg-blue-600 text-white"
+                : "bg-white border text-gray-600"
             }`}
           >
-            Archived
+            Archived Orders
           </button>
+
         </div>
 
         {/* EMPTY */}
         {orders.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-100 p-14 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-300 flex items-center justify-center mx-auto mb-4">
-              <Package size={28} />
-            </div>
-            <p className="text-gray-500 font-medium">
-              {activeTab === "archived" ? "No archived orders yet" : "No orders yet"}
-            </p>
-            {activeTab === "active" && role !== "owner" && (
-              <Link
-                to="/shops"
-                className="inline-block mt-4 text-sm font-semibold text-blue-600 hover:underline"
-              >
-                Browse shops →
-              </Link>
-            )}
+
+          <div className="bg-white rounded-2xl p-10 text-center text-gray-500">
+
+            No orders found
+
           </div>
+
         ) : (
-          <div className="space-y-4">
-            {orders.map((order) => {
-              const statusCfg = getStatusConfig(order.status);
 
-              return (
-                <div
-                  key={order.id}
-                  className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition p-5"
-                >
+          <div className="space-y-5">
 
-                  {/* TOP */}
-                  <div className="flex justify-between items-start gap-3">
-  <div>
-    <h3 className="font-bold text-lg text-gray-900">{order.service?.name}</h3>
-    <Link
-      to={`/shop/${order.shop?.id}`}
-      className="text-sm text-blue-500 hover:underline mt-0.5 inline-block"
-      onClick={(e) => e.stopPropagation()}
-    >
-      {order.shop?.name}
-    </Link>
-  </div>
-  <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold shrink-0 ${statusCfg.color}`}>
-    {statusCfg.icon}
-    {order.status}
-  </span>
-</div>
+            {orders.map((order) => (
 
-                  {/* DETAILS */}
-                  <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-50 text-sm">
-                    <div>
-                      <p className="text-gray-400 text-xs">Weight</p>
-                      <p className="font-bold text-gray-800 mt-0.5">{order.weight} kg</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400 text-xs">Total</p>
-                      <p className="font-bold text-blue-600 mt-0.5">KES {order.total_price}</p>
-                    </div>
+              <div
+                key={order.id}
+                className="bg-white rounded-2xl shadow p-5"
+              >
+
+                {/* TOP */}
+                <div className="flex justify-between items-center">
+
+                  <div>
+
+                    <h3 className="font-semibold text-lg">
+                      {order.service?.name}
+                    </h3>
+
+                    <p className="text-sm text-gray-500">
+                      {order.shop?.name}
+                    </p>
+
                   </div>
 
-                  {/* PAYMENT SECTION — CUSTOMER ONLY */}
-                  {role === "customer" && activeTab === "active" && (
-                    <div className="mt-4 pt-4 border-t border-gray-50">
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusStyle(
+                      order.status
+                    )}`}
+                  >
+                    {order.status}
+                  </span>
 
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-sm text-gray-500 flex items-center gap-1.5">
-                          <CreditCard size={14} />
-                          Payment
-                        </span>
-                        <span className={
-                          order.payment_status === "paid"
-                            ? "text-xs font-semibold px-2.5 py-1 rounded-full bg-green-100 text-green-700"
-                            : order.payment_status === "pending_payment"
-                            ? "text-xs font-semibold px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-700"
-                            : order.payment_status === "failed"
-                            ? "text-xs font-semibold px-2.5 py-1 rounded-full bg-red-100 text-red-700"
-                            : "text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600"
-                        }>
-                          {order.payment_status === "paid" && "Paid"}
-                          {order.payment_status === "pending_payment" && "Pending"}
-                          {order.payment_status === "failed" && "Failed"}
-                          {order.payment_status === "unpaid" && "Unpaid"}
-                        </span>
-                      </div>
+                </div>
 
-                      {order.payment_status === "paid" && order.mpesa_transaction_code && (
-                        <p className="text-xs text-green-600 mb-3 bg-green-50 rounded-lg px-3 py-2">
-                          M-Pesa Code: <strong>{order.mpesa_transaction_code}</strong>
-                        </p>
-                      )}
+                {/* DETAILS */}
+                <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
 
-                      {(order.payment_status === "unpaid" || order.payment_status === "failed") && (
-                        <button
-                          onClick={() => handlePay(order.id)}
-                          disabled={payingOrderId === order.id || pollingOrderId === order.id}
-                          className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white text-sm font-bold py-3 rounded-xl transition disabled:opacity-50 shadow-sm shadow-green-100"
-                        >
-                          {payingOrderId === order.id
-                            ? "Sending prompt..."
-                            : pollingOrderId === order.id
-                            ? "Waiting for payment..."
-                            : "Pay with M-Pesa"}
-                        </button>
-                      )}
+                  <div>
 
-                      {paymentMessage && (
-                        <p className="text-xs text-gray-500 mt-2.5 text-center">{paymentMessage}</p>
-                      )}
+                    <p className="text-gray-500">
+                      Weight
+                    </p>
 
-                    </div>
-                  )}
+                    <p className="font-semibold">
+                      {order.weight} kg
+                    </p>
 
-                  {/* OWNER INFO */}
-                  {role === "owner" && (
-                    <div className="mt-4 pt-4 border-t border-gray-50">
-                      <div className="bg-gray-50 rounded-xl p-4 text-sm space-y-1.5">
-                        <p className="text-gray-700">
-                          <span className="font-semibold text-gray-900">Customer:</span> {order.user?.username}
-                        </p>
-                        <p className="text-gray-700">
-                          <span className="font-semibold text-gray-900">Phone:</span> {order.customer_phone || "N/A"}
-                        </p>
-                        <p className="text-gray-700">
-                          <span className="font-semibold text-gray-900">Location:</span> {order.customer_location || "N/A"}
-                        </p>
+                  </div>
 
-                        <div className="flex gap-4 pt-2">
-                          {order.customer_phone && (
-                            <a
-                              href={`tel:${order.customer_phone}`}
-                              className="flex items-center gap-1.5 text-blue-600 text-xs font-semibold hover:underline"
-                            >
-                              <Phone size={12} />
-                              Call
-                            </a>
-                          )}
-                          {order.customer_location && (
-                            <a
-                              href={`https://www.google.com/maps/search/?api=1&query=${order.customer_location}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="flex items-center gap-1.5 text-green-600 text-xs font-semibold hover:underline"
-                            >
-                              <MapPin size={12} />
-                              Map
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  <div>
 
-                  {/* OWNER ACTIONS */}
-                  {role === "owner" && activeTab !== "archived" && (
-                    <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-gray-50">
-                      {["pending", "washing", "completed"].map((s) => (
-                        <button
-                          key={s}
-                          onClick={() => handleStatusUpdate(order.id, s)}
-                          className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg text-white capitalize transition ${
-                            order.status === s ? "ring-2 ring-offset-1 ring-blue-300" : ""
-                          } ${
-                            s === "pending"
-                              ? "bg-gray-500 hover:bg-gray-600"
-                              : s === "washing"
-                              ? "bg-blue-500 hover:bg-blue-600"
-                              : "bg-green-600 hover:bg-green-700"
-                          }`}
-                        >
-                          {s}
-                        </button>
-                      ))}
+                    <p className="text-gray-500">
+                      Total
+                    </p>
 
-                      {order.status === "completed" && !order.owner_archived && (
-                        <button
-                          onClick={() => handleArchive(order.id)}
-                          className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-gray-800 text-white flex items-center gap-1.5 hover:bg-gray-900 transition ml-auto"
-                        >
-                          <Archive size={12} />
-                          Archive
-                        </button>
-                      )}
-                    </div>
-                  )}
+                    <p className="font-semibold text-blue-600">
+                      KES {order.total_price}
+                    </p>
 
-                  {/* CUSTOMER ARCHIVE */}
-                  {role === "customer" &&
-                    activeTab !== "archived" &&
-                    order.status === "completed" &&
-                    !order.customer_archived && (
-                      <div className="mt-4 pt-4 border-t border-gray-50">
-                        <button
-                          onClick={() => handleArchive(order.id)}
-                          className="px-4 py-2.5 text-sm font-semibold rounded-xl bg-gray-800 hover:bg-gray-900 text-white flex items-center gap-2 transition"
-                        >
-                          <Archive size={14} />
-                          Archive Order
-                        </button>
-                      </div>
-                    )}
-
-                  {/* BOOK AGAIN */}
-                  {role === "customer" && activeTab === "archived" && (
-                    <div className="mt-4 pt-4 border-t border-gray-50">
-                      <button
-                        onClick={() => handleBookAgain(order)}
-                        className="px-4 py-2.5 text-sm font-semibold rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white flex items-center gap-2 transition"
-                      >
-                        <RotateCcw size={14} />
-                        Book Again
-                      </button>
-                    </div>
-                  )}
-
-                  {/* FOOTER */}
-                  <div className="mt-4 text-xs text-gray-300 font-medium">
-                    Order #{order.id}
                   </div>
 
                 </div>
-              );
-            })}
+
+                {/* PAYMENT SECTION — CUSTOMER ONLY */}
+                {role === "customer" && activeTab === "active" && (
+                  <div className="mt-4 border-t pt-3">
+
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-gray-500">Payment</span>
+                      <span className={
+                        order.payment_status === "paid"
+                          ? "text-xs font-semibold px-2 py-1 rounded-full bg-green-100 text-green-700"
+                          : order.payment_status === "pending_payment"
+                          ? "text-xs font-semibold px-2 py-1 rounded-full bg-yellow-100 text-yellow-700"
+                          : order.payment_status === "failed"
+                          ? "text-xs font-semibold px-2 py-1 rounded-full bg-red-100 text-red-700"
+                          : "text-xs font-semibold px-2 py-1 rounded-full bg-gray-100 text-gray-600"
+                      }>
+                        {order.payment_status === "paid" && "Paid"}
+                        {order.payment_status === "pending_payment" && "Pending"}
+                        {order.payment_status === "failed" && "Failed"}
+                        {order.payment_status === "unpaid" && "Unpaid"}
+                      </span>
+                    </div>
+
+                    {order.payment_status === "paid" && order.mpesa_transaction_code && (
+                      <p className="text-xs text-green-600 mb-2">
+                        M-Pesa Code: <strong>{order.mpesa_transaction_code}</strong>
+                      </p>
+                    )}
+
+                    {(order.payment_status === "unpaid" || order.payment_status === "failed") && (
+                      <button
+                        onClick={() => handlePay(order.id)}
+                        disabled={payingOrderId === order.id || pollingOrderId === order.id}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-semibold py-2 rounded-lg transition disabled:opacity-50"
+                      >
+                        {payingOrderId === order.id
+                          ? "Sending prompt..."
+                          : pollingOrderId === order.id
+                          ? "Waiting for payment..."
+                          : "Pay with M-Pesa"}
+                      </button>
+                    )}
+
+                    {paymentMessage && (
+                      <p className="text-xs text-gray-600 mt-2 text-center">{paymentMessage}</p>
+                    )}
+
+                  </div>
+                )}
+
+                {/* OWNER INFO */}
+                {role === "owner" && (
+
+                  <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
+
+                    <p>
+
+                      <strong>
+                        Customer:
+                      </strong>{" "}
+
+                      {
+                        order.user
+                          ?.username
+                      }
+
+                    </p>
+
+                    <p>
+
+                      <strong>
+                        Phone:
+                      </strong>{" "}
+
+                      {
+                        order.customer_phone ||
+                        "N/A"
+                      }
+
+                    </p>
+
+                    <p>
+
+                      <strong>
+                        Location:
+                      </strong>{" "}
+
+                      {
+                        order.customer_location ||
+                        "N/A"
+                      }
+
+                    </p>
+
+                    {/* ACTION LINKS */}
+                    <div className="flex gap-3 mt-2">
+
+                      {order.customer_phone && (
+
+                        <a
+                          href={`tel:${order.customer_phone}`}
+                          className="flex items-center gap-1 text-blue-600 text-xs"
+                        >
+
+                          <FaPhoneAlt />
+
+                          Call
+
+                        </a>
+
+                      )}
+
+                      {order.customer_location && (
+
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${order.customer_location}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-1 text-green-600 text-xs"
+                        >
+
+                          <FaMapMarkerAlt />
+
+                          Map
+
+                        </a>
+
+                      )}
+
+                    </div>
+
+                  </div>
+
+                )}
+
+                {/* OWNER ACTIONS */}
+                {role === "owner" &&
+                 activeTab !== "archived" && (
+
+                  <div className="flex flex-wrap gap-2 mt-4">
+
+                    {[
+                      "pending",
+                      "washing",
+                      "completed",
+                    ].map((s) => (
+
+                      <button
+                        key={s}
+                        onClick={() =>
+                          handleStatusUpdate(
+                            order.id,
+                            s
+                          )
+                        }
+                        className={`px-3 py-1 text-xs rounded-md text-white ${
+                          s === "pending"
+                            ? "bg-gray-500"
+                            : s === "washing"
+                            ? "bg-yellow-500"
+                            : "bg-green-600"
+                        }`}
+                      >
+
+                        {s}
+
+                      </button>
+
+                    ))}
+
+                    {/* OWNER ARCHIVE */}
+                    {order.status ===
+                      "completed" &&
+                      !order.owner_archived && (
+
+                      <button
+                        onClick={() =>
+                          handleArchive(
+                            order.id
+                          )
+                        }
+                        className="px-3 py-1 text-xs rounded-md bg-blue-600 text-white flex items-center gap-1"
+                      >
+
+                        <FaArchive />
+
+                        Archive
+
+                      </button>
+
+                    )}
+
+                  </div>
+
+                )}
+
+                {/* CUSTOMER ARCHIVE */}
+                {role === "customer" &&
+                 activeTab !== "archived" &&
+                 order.status ===
+                   "completed" &&
+                 !order.customer_archived && (
+
+                  <div className="mt-4">
+
+                    <button
+                      onClick={() =>
+                        handleArchive(
+                          order.id
+                        )
+                      }
+                      className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white flex items-center gap-2"
+                    >
+
+                      <FaArchive />
+
+                      Archive Order
+
+                    </button>
+
+                  </div>
+
+                )}
+
+                {/* BOOK AGAIN */}
+{role === "customer" &&
+ activeTab === "archived" && (
+
+  <div className="mt-4">
+
+    <button
+      onClick={() =>
+        handleBookAgain(order)
+      }
+      className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white"
+    >
+      Book Again
+    </button>
+
+  </div>
+
+)}
+
+
+                {/* TIMELINE */}
+                <div className="mt-4 pt-4 border-t border-gray-50">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Timeline</p>
+                  <div className="space-y-1.5">
+
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
+                      <span className="font-medium text-gray-700">Order placed</span>
+                      <span className="ml-auto text-gray-400">
+                        {new Date(order.created_at).toLocaleString("en-KE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    </div>
+
+                    {order.washing_at && (
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
+                        <span className="font-medium text-gray-700">Washing started</span>
+                        <span className="ml-auto text-gray-400">
+                          {new Date(order.washing_at).toLocaleString("en-KE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+                    )}
+
+                    {order.completed_at && (
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
+                        <span className="font-medium text-gray-700">Completed</span>
+                        <span className="ml-auto text-gray-400">
+                          {new Date(order.completed_at).toLocaleString("en-KE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+                    )}
+
+                  </div>
+                </div>
+
+                {/* FOOTER */}
+                <div className="mt-3 text-xs text-gray-300">
+                  Order #{order.id}
+                </div>
+
+              </div>
+
+            ))}
+
           </div>
+
         )}
 
       </div>
+
     </div>
   );
 }
 
 export default Orders;
-
 
