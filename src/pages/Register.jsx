@@ -201,7 +201,7 @@ function Register() {
                   id="location"
                   name="location"
                   type="text"
-                  placeholder="Kileleshwa"
+                  placeholder="Your location"
                   value={form.location}
                   onChange={(e) => setForm({ ...form, location: e.target.value })}
                   className="w-full border border-gray-200 bg-gray-50 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition"
