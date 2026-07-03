@@ -175,6 +175,11 @@ export const archiveOrder = async (id) => {
   return res.data;
 };
 
+export const declineOrder = async (id, reason) => {
+  const res = await API.post(`orders/${id}/decline/`, { reason });
+  return res.data;
+};
+
 export const updateOrderNotes = async (id, notes) => {
   const res = await API.put(`orders/${id}/notes/`, { notes });
   return res.data;
