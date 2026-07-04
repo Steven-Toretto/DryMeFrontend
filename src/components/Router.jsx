@@ -14,6 +14,7 @@ import ShopDetails from "../pages/ShopDetails";
 import Services from "../pages/Services";
 import Home from "../pages/Home";
 import EditShop from "../pages/EditShop";
+import Profile from "../pages/Profile";
 
 // Components
 import PrivateRoute from "../components/PrivateRouter";
@@ -49,6 +50,15 @@ export default function Router() {
         />
 
         <Route
+          path="profile"
+          element={
+            <PrivateRoute>
+              <Profile />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
           path="edit-shop/:id"
           element={
             <PrivateRoute>
@@ -70,9 +80,3 @@ export default function Router() {
     </Routes>
   );
 }
-
-
-
-
-
-

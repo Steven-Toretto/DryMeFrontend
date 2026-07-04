@@ -185,11 +185,6 @@ export const cancelOrder = async (id) => {
   return res.data;
 };
 
-// export const cancelOrder = async (id) => {
-//   const res = await API.post(`orders/${id}/cancel/`);
-//   return res.data;
-// };
-
 export const updateOrderNotes = async (id, notes) => {
   const res = await API.put(`orders/${id}/notes/`, { notes });
   return res.data;
@@ -208,5 +203,25 @@ export const checkPaymentStatus = async (orderId) => {
   return res.data;
 };
 
-export default API;
+// ===============================
+// 👤 PROFILE
+// ===============================
+export const getProfile = async () => {
+  const res = await API.get("profile/");
+  return res.data;
+};
 
+export const updateProfile = async (data) => {
+  const res = await API.patch("profile/", data);
+  return res.data;
+};
+
+export const changePassword = async (oldPassword, newPassword) => {
+  const res = await API.post("profile/change-password/", {
+    old_password: oldPassword,
+    new_password: newPassword,
+  });
+  return res.data;
+};
+
+export default API;

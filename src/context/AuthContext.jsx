@@ -64,6 +64,17 @@ const AuthProvider = ({ children }) => {
   };
 
   // =========================
+  // ✏️ UPDATE USER (after profile edits)
+  // =========================
+  const updateUser = (partialData) => {
+    setUser((prev) => {
+      const updated = { ...(prev || {}), ...partialData };
+      localStorage.setItem("user", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  // =========================
   // 🚪 LOGOUT
   // =========================
   const logoutUser = () => {
@@ -111,6 +122,7 @@ const AuthProvider = ({ children }) => {
         user,
         loginUser,
         logoutUser,
+        updateUser,
       }}
     >
       {children}
