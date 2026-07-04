@@ -180,6 +180,16 @@ export const declineOrder = async (id, reason) => {
   return res.data;
 };
 
+export const cancelOrder = async (id) => {
+  const res = await API.post(`orders/${id}/cancel/`);
+  return res.data;
+};
+
+// export const cancelOrder = async (id) => {
+//   const res = await API.post(`orders/${id}/cancel/`);
+//   return res.data;
+// };
+
 export const updateOrderNotes = async (id, notes) => {
   const res = await API.put(`orders/${id}/notes/`, { notes });
   return res.data;

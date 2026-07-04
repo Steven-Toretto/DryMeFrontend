@@ -192,6 +192,23 @@ function Nav() {
       {mobileMenu && (
         <div className="md:hidden border-t border-gray-100 bg-white px-6 py-4 space-y-1 shadow-sm">
 
+          {/* PROFILE HEADER — who's logged in */}
+          {token && (
+            <div className="flex items-center gap-3 px-3 pb-4 mb-2 border-b border-gray-100">
+              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-600 to-blue-500 text-white flex items-center justify-center text-base font-bold shrink-0">
+                {user?.username?.charAt(0).toUpperCase() || (role === "owner" ? "O" : "U")}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-gray-900 truncate">
+                  {user?.username || (role === "owner" ? "Owner" : "User")}
+                </p>
+                <p className="text-xs text-gray-400">
+                  {role === "owner" ? "Shop Owner" : "Customer"}
+                </p>
+              </div>
+            </div>
+          )}
+
           {role !== "owner" && (
             <>
               <Link

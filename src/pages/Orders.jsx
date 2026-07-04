@@ -3,13 +3,14 @@ import { useNavigate, Link } from "react-router-dom";
 import {
   getOrders, getOwnerOrders, getArchivedOrders,
   getArchivedOwnerOrders, updateOrderStatus, archiveOrder,
-  initiatePayment, checkPaymentStatus, updateOrderNotes, declineOrder,
+  initiatePayment, checkPaymentStatus, updateOrderNotes,
+  declineOrder, cancelOrder,
 } from "../api";
 import {
   Phone, MapPin, Archive, Package, Droplets,
   CheckCircle2, Clock, RotateCcw, CreditCard,
   ShoppingBag, Shirt, Sparkles, StickyNote, Pencil,
-  ThumbsUp, XCircle, AlertTriangle,
+  ThumbsUp, XCircle, AlertTriangle, Ban,
 } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
 
@@ -33,6 +34,8 @@ function Orders() {
   const [declineReasonDraft, setDeclineReasonDraft] = useState("");
   const [decliningSubmitId, setDecliningSubmitId] = useState(null);
   const [declineError, setDeclineError] = useState("");
+
+  const [cancellingId, setCancellingId] = useState(null);
 
   const formatTime = (dt) =>
     new Date(dt).toLocaleString("en-KE", {
@@ -137,6 +140,27 @@ function Orders() {
       setOrders((prev) => prev.filter((o) => o.id !== id));
     } catch (err) {
       console.error("Archive error:", err.response?.data || err.message);
+      alert(err.response?.data?.error || "Couldn't archive this order. Try again.");
+    }
+  };
+
+  const handleCancelOrder = async (id) => {
+    if (!window.confirm("Cancel this order? This can't be undone.")) return;
+    setCancellingId(id);
+    try {
+      const res = await cancelOrder(id);
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === id
+            ? { ...o, status: "cancelled", cancelled_at: new Date().toISOString(), refund_needed: res.refund_needed ?? false }
+            : o
+        )
+      );
+    } catch (err) {
+      console.error("Cancel error:", err.response?.data || err.message);
+      alert(err.response?.data?.error || "Couldn't cancel this order. Try again.");
+    } finally {
+      setCancellingId(null);
     }
   };
 
@@ -216,6 +240,7 @@ function Orders() {
       case "washing":   return { color: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",   icon: <Droplets size={12} className="animate-pulse" />, bar: "bg-blue-400", dot: "bg-blue-500" };
       case "confirmed": return { color: "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200", icon: <ThumbsUp size={12} />, bar: "bg-indigo-400", dot: "bg-indigo-500" };
       case "declined":  return { color: "bg-rose-50 text-rose-700 ring-1 ring-rose-200", icon: <XCircle size={12} />, bar: "bg-rose-400", dot: "bg-rose-500" };
+      case "cancelled": return { color: "bg-slate-100 text-slate-600 ring-1 ring-slate-200", icon: <Ban size={12} />, bar: "bg-slate-400", dot: "bg-slate-500" };
       default:          return { color: "bg-amber-50 text-amber-700 ring-1 ring-amber-200", icon: <Clock size={12} />, bar: "bg-amber-300", dot: "bg-amber-500" };
     }
   };
@@ -398,16 +423,26 @@ function Orders() {
                       </div>
                     </div>
 
-                    {/* DECLINE NOTICE — shown to both roles once declined */}
-                    {order.status === "declined" && (
-                      <div className="mb-5 p-4 border border-rose-200 bg-rose-50/70 rounded-2xl">
-                        <p className="flex items-center gap-1.5 text-xs font-bold text-rose-800 uppercase tracking-wide mb-1.5">
-                          <XCircle size={13} />
-                          {role === "owner" ? "You declined this order" : "This order was declined"}
+                    {/* DECLINE / CANCEL NOTICE — shown to both roles once the order is a dead end */}
+                    {(order.status === "declined" || order.status === "cancelled") && (
+                      <div className={`mb-5 p-4 border rounded-2xl ${
+                        order.status === "declined" ? "border-rose-200 bg-rose-50/70" : "border-slate-200 bg-slate-50"
+                      }`}>
+                        <p className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide mb-1.5 ${
+                          order.status === "declined" ? "text-rose-800" : "text-slate-600"
+                        }`}>
+                          {order.status === "declined" ? <XCircle size={13} /> : <Ban size={13} />}
+                          {order.status === "declined"
+                            ? (role === "owner" ? "You declined this order" : "This order was declined")
+                            : (role === "owner" ? "Customer cancelled this order" : "You cancelled this order")}
                         </p>
-                        <p className="text-sm text-slate-700 whitespace-pre-wrap">{order.decline_reason}</p>
+                        {order.status === "declined" && (
+                          <p className="text-sm text-slate-700 whitespace-pre-wrap">{order.decline_reason}</p>
+                        )}
                         {order.refund_needed && (
-                          <div className="flex items-start gap-1.5 mt-3 pt-3 border-t border-rose-200/70">
+                          <div className={`flex items-start gap-1.5 mt-3 pt-3 border-t ${
+                            order.status === "declined" ? "border-rose-200/70" : "border-slate-200"
+                          }`}>
                             <AlertTriangle size={13} className="text-amber-600 mt-0.5 shrink-0" />
                             <p className="text-xs text-amber-700 font-medium">
                               {role === "owner"
@@ -497,7 +532,7 @@ function Orders() {
                     )}
 
                     {/* PAYMENT — CUSTOMER ONLY */}
-                    {role === "customer" && activeTab === "active" && order.status !== "declined" && (
+                    {role === "customer" && activeTab === "active" && order.status !== "declined" && order.status !== "cancelled" && (
                       <div className="mb-5 p-4 border border-blue-900/5 bg-white rounded-2xl">
                         <div className="flex items-center justify-between mb-3">
                           <span className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
@@ -572,7 +607,7 @@ function Orders() {
                     )}
 
                     {/* OWNER STATUS BUTTONS */}
-                    {role === "owner" && activeTab !== "archived" && order.status !== "declined" && (
+                    {role === "owner" && activeTab !== "archived" && order.status !== "declined" && order.status !== "cancelled" && (
                       <div className="flex flex-wrap items-center gap-2 mb-3">
                         {order.status === "pending" && (
                           <>
@@ -655,8 +690,23 @@ function Orders() {
                       </div>
                     )}
 
-                    {/* OWNER ARCHIVE — declined orders (no further status actions apply) */}
-                    {role === "owner" && activeTab !== "archived" && order.status === "declined" && !order.owner_archived && (
+                    {/* CUSTOMER CANCEL — only before washing starts */}
+                    {role === "customer" && activeTab === "active" &&
+                      (order.status === "pending" || order.status === "confirmed") && (
+                      <div className="mb-5">
+                        <button
+                          onClick={() => handleCancelOrder(order.id)}
+                          disabled={cancellingId === order.id}
+                          className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-full bg-rose-50 text-rose-700 ring-1 ring-rose-200 hover:bg-rose-100 transition disabled:opacity-50"
+                        >
+                          <Ban size={14} /> {cancellingId === order.id ? "Cancelling..." : "Cancel Order"}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* OWNER ARCHIVE — declined/cancelled orders (no further status actions apply) */}
+                    {role === "owner" && activeTab !== "archived" &&
+                      (order.status === "declined" || order.status === "cancelled") && !order.owner_archived && (
                       <div className="mb-5">
                         <button onClick={() => handleArchive(order.id)}
                           className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-full bg-slate-800 hover:bg-slate-900 text-white transition">
@@ -667,7 +717,7 @@ function Orders() {
 
                     {/* CUSTOMER ARCHIVE */}
                     {role === "customer" && activeTab !== "archived" &&
-                      (order.status === "completed" || order.status === "declined") && !order.customer_archived && (
+                      (order.status === "completed" || order.status === "declined" || order.status === "cancelled") && !order.customer_archived && (
                       <div className="mb-5">
                         <button onClick={() => handleArchive(order.id)}
                           className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-full bg-slate-800 hover:bg-slate-900 text-white transition">
@@ -696,6 +746,7 @@ function Orders() {
                           order.washing_at && { key: "washing", label: "Washing started", time: order.washing_at, ring: "bg-blue-50 ring-blue-200", icon: <Droplets size={11} className="text-blue-600" /> },
                           order.completed_at && { key: "completed", label: "Completed", time: order.completed_at, ring: "bg-emerald-50 ring-emerald-200", icon: <CheckCircle2 size={11} className="text-emerald-600" /> },
                           order.declined_at && { key: "declined", label: "Declined", time: order.declined_at, ring: "bg-rose-50 ring-rose-200", icon: <XCircle size={11} className="text-rose-600" /> },
+                          order.cancelled_at && { key: "cancelled", label: "Cancelled", time: order.cancelled_at, ring: "bg-slate-100 ring-slate-300", icon: <Ban size={11} className="text-slate-500" /> },
                         ].filter(Boolean).map((step, i, arr) => (
                           <div key={step.key} className="flex gap-3">
                             <div className="flex flex-col items-center">
