@@ -260,7 +260,7 @@ function Orders() {
   if (loading) {
     return (
       <div className="min-h-screen bg-blue-50/40">
-        <div className="bg-gradient-to-br from-blue-700 via-blue-600 to-blue-500 py-16 px-6">
+        <div className="bg-gradient-to-br from-blue-700 via-blue-600 to-blue-500 py-14 px-6">
           <div className="max-w-3xl mx-auto">
             <div className="h-8 w-40 bg-white/20 rounded-xl animate-pulse mb-2" />
             <div className="h-4 w-24 bg-white/10 rounded-xl animate-pulse" />
@@ -268,7 +268,7 @@ function Orders() {
         </div>
         <div className="max-w-3xl mx-auto px-6 py-8 space-y-5">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-white rounded-[28px] border border-blue-900/5 p-5 animate-pulse shadow-sm">
+            <div key={i} className="bg-white rounded-[28px] border border-blue-900/5 p-5 animate-pulse shadow-[0_2px_20px_-8px_rgba(15,110,110,0.15)]">
               <div className="flex justify-between mb-4">
                 <div className="space-y-2">
                   <div className="h-5 w-36 bg-slate-100 rounded" />
@@ -351,7 +351,7 @@ function Orders() {
 
         {/* EMPTY */}
         {orders.length === 0 ? (
-          <div className="bg-white rounded-[28px] border border-blue-900/5 p-16 text-center shadow-sm">
+          <div className="bg-white rounded-[28px] border border-blue-900/5 p-16 text-center shadow-[0_2px_20px_-8px_rgba(15,110,110,0.1)]">
             <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-4">
               <ShoppingBag size={26} className="text-blue-300" strokeWidth={1.75} />
             </div>
@@ -374,11 +374,9 @@ function Orders() {
               const paymentCfg = getPaymentConfig(order.payment_status);
 
               return (
-                <div key={order.id} className="relative bg-white rounded-[28px] border border-blue-900/5 shadow-md overflow-hidden">
+                <div key={order.id} className="relative bg-white rounded-[28px] border border-blue-900/5 shadow-sm hover:shadow-md transition-shadow">
 
-                  {/* punch-hole ticket notches */}
-                  <div className="absolute -left-3 top-24 w-6 h-6 rounded-full bg-blue-50/40 border border-blue-900/5" />
-                  <div className="absolute -right-3 top-24 w-6 h-6 rounded-full bg-blue-50/40 border border-blue-900/5" />
+
 
                   {/* STATUS BAR */}
                   <div className={`h-1.5 w-full ${statusCfg.bar}`} />
@@ -1056,7 +1054,7 @@ export default Orders;
 //         </div>
 //         <div className="max-w-3xl mx-auto px-6 py-8 space-y-5">
 //           {[...Array(3)].map((_, i) => (
-//             <div key={i} className="bg-white rounded-[28px] border border-blue-900/5 p-5 animate-pulse shadow-[0_2px_20px_-8px_rgba(15,110,110,0.15)]">
+//             <div key={i} className="bg-white rounded-[28px] border border-blue-900/5 p-5 animate-pulse shadow-sm">
 //               <div className="flex justify-between mb-4">
 //                 <div className="space-y-2">
 //                   <div className="h-5 w-36 bg-slate-100 rounded" />
@@ -1139,7 +1137,7 @@ export default Orders;
 
 //         {/* EMPTY */}
 //         {orders.length === 0 ? (
-//           <div className="bg-white rounded-[28px] border border-blue-900/5 p-16 text-center shadow-[0_2px_20px_-8px_rgba(15,110,110,0.1)]">
+//           <div className="bg-white rounded-[28px] border border-blue-900/5 p-16 text-center shadow-sm">
 //             <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-4">
 //               <ShoppingBag size={26} className="text-blue-300" strokeWidth={1.75} />
 //             </div>
@@ -1162,7 +1160,7 @@ export default Orders;
 //               const paymentCfg = getPaymentConfig(order.payment_status);
 
 //               return (
-//                 <div key={order.id} className="relative bg-white rounded-[28px] border border-blue-900/5 shadow-[0_2px_20px_-8px_rgba(15,110,110,0.12)] hover:shadow-[0_8px_28px_-8px_rgba(15,110,110,0.22)] transition-shadow overflow-hidden">
+//                 <div key={order.id} className="relative bg-white rounded-[28px] border border-blue-900/5 shadow-md overflow-hidden">
 
 //                   {/* punch-hole ticket notches */}
 //                   <div className="absolute -left-3 top-24 w-6 h-6 rounded-full bg-blue-50/40 border border-blue-900/5" />
@@ -1571,3 +1569,4 @@ export default Orders;
 // }
 
 // export default Orders;
+
