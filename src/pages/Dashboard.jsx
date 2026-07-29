@@ -417,10 +417,20 @@ const Dashboard = () => {
                         <div className="flex items-center justify-between mb-2">
                           <p className="text-xs font-bold text-gray-700 uppercase tracking-wide">Services</p>
                           <button
-                            onClick={() => fetchShopServices(shop.id)}
+                            onClick={() => {
+                              if (shopServices[shop.id]) {
+                                setShopServices(prev => {
+                                  const updated = { ...prev };
+                                  delete updated[shop.id];
+                                  return updated;
+                                });
+                              } else {
+                                fetchShopServices(shop.id);
+                              }
+                            }}
                             className="text-xs text-blue-500 hover:underline font-medium"
                           >
-                            Load
+                            {shopServices[shop.id] ? "Hide" : "Load"}
                           </button>
                         </div>
 
@@ -606,5 +616,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
 
