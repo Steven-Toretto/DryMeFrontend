@@ -13,19 +13,23 @@ import {
   updateOrderStatus,
   declineOrder,
   archiveOrder,
+  getProfile,
+  updateProfile,
+  changePassword,
 } from "../api";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   Home, ShoppingCart, Store, PlusCircle,
-  Trash2, Edit2, Users, Tag, LogOut,
+  Trash2, Edit2, Users, LogOut, Tag,
   Image as ImageIcon, Menu, X, TrendingUp,
   CheckCircle2, Clock, Droplets, ThumbsUp, XCircle, Archive, Ban,
+  User, Phone, MapPin, Mail, Lock, Check, Settings, AlertTriangle,
 } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { logoutUser, token, user } = useContext(AuthContext);
+  const { logoutUser, token, user, updateUser } = useContext(AuthContext);
   const role = user?.role;
 
   const hour = new Date().getHours();
@@ -43,6 +47,22 @@ const Dashboard = () => {
   const [archivedOrders, setArchivedOrders] = useState([]);
   const [loadingArchived, setLoadingArchived] = useState(false);
   const [archivedLoaded, setArchivedLoaded] = useState(false);
+
+  const [profileData, setProfileData] = useState(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [profileLoaded, setProfileLoaded] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [profileDraft, setProfileDraft] = useState({ username: "", phone: "", location: "" });
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileError, setProfileError] = useState("");
+  const [profileSuccess, setProfileSuccess] = useState("");
+
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState("");
 
   const [decliningOrderId, setDecliningOrderId] = useState(null);
   const [declineReasonDraft, setDeclineReasonDraft] = useState("");
@@ -124,6 +144,107 @@ const Dashboard = () => {
       console.error("Fetch archived orders error:", error);
     } finally {
       setLoadingArchived(false);
+    }
+  };
+
+  const fetchProfileData = async () => {
+    setLoadingProfile(true);
+    try {
+      const data = await getProfile();
+      const { stats, ...rest } = data;
+      setProfileData(rest);
+      setProfileDraft({
+        username: rest.username || "",
+        phone: rest.phone || "",
+        location: rest.location || "",
+      });
+      setProfileLoaded(true);
+    } catch (error) {
+      console.error("Fetch profile error:", error.response?.data || error.message);
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
+
+  const handleStartEditProfile = () => {
+    setProfileDraft({
+      username: profileData.username || "",
+      phone: profileData.phone || "",
+      location: profileData.location || "",
+    });
+    setProfileError("");
+    setProfileSuccess("");
+    setEditingProfile(true);
+  };
+
+  const handleCancelEditProfile = () => {
+    setEditingProfile(false);
+    setProfileError("");
+  };
+
+  const handleSaveProfile = async () => {
+    if (!profileDraft.username.trim()) {
+      setProfileError("Username can't be empty.");
+      return;
+    }
+    setSavingProfile(true);
+    setProfileError("");
+    try {
+      const updated = await updateProfile({
+        username: profileDraft.username.trim(),
+        phone: profileDraft.phone.trim(),
+        location: profileDraft.location.trim(),
+      });
+      setProfileData((prev) => ({ ...prev, ...updated }));
+      updateUser({
+        username: updated.username,
+        phone: updated.phone,
+        location: updated.location,
+      });
+      setEditingProfile(false);
+      setProfileSuccess("Profile updated.");
+      setTimeout(() => setProfileSuccess(""), 3000);
+    } catch (err) {
+      const data = err.response?.data;
+      const msg = data
+        ? Object.values(data).flat().join(" ")
+        : "Couldn't save your changes. Try again.";
+      setProfileError(msg);
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setPasswordError("");
+    setPasswordSuccess("");
+
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      setPasswordError("Fill in all three fields.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("New passwords don't match.");
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPasswordError("New password must be at least 8 characters.");
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      await changePassword(oldPassword, newPassword);
+      setPasswordSuccess("Password updated.");
+      setOldPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setTimeout(() => setPasswordSuccess(""), 3000);
+    } catch (err) {
+      setPasswordError(err.response?.data?.error || "Couldn't update your password.");
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -411,12 +532,17 @@ const Dashboard = () => {
                 { view: "overview", icon: <Home size={17} />, label: "Dashboard" },
                 { view: "orders", icon: <ShoppingCart size={17} />, label: "Orders", badge: orders.length },
                 { view: "shops", icon: <Store size={17} />, label: "Shops", badge: shops.length },
+                { view: "profile", icon: <User size={17} />, label: "Profile" },
+                { view: "settings", icon: <Settings size={17} />, label: "Settings" },
               ].map((item) => (
                 <li key={item.view}>
                   <button
                     onClick={() => {
                       setActiveView(item.view);
                       setSidebarOpen(false);
+                      if (item.view === "profile" && !profileLoaded) {
+                        fetchProfileData();
+                      }
                     }}
                     className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition text-sm font-medium ${
                       activeView === item.view ? "bg-white/15" : "hover:bg-white/10"
@@ -432,23 +558,6 @@ const Dashboard = () => {
                       </span>
                     )}
                   </button>
-                </li>
-              ))}
-
-              {[
-                { to: "/services", icon: <Tag size={17} />, label: "Services" },
-              ].map((item) => (
-                <li key={item.to}>
-                  <Link
-                    to={item.to}
-                    onClick={() => setSidebarOpen(false)}
-                    className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/10 transition text-sm font-medium"
-                  >
-                    <div className="flex items-center gap-3">
-                      {item.icon}
-                      {item.label}
-                    </div>
-                  </Link>
                 </li>
               ))}
             </ul>
@@ -482,6 +591,10 @@ const Dashboard = () => {
               </>
             ) : activeView === "shops" ? (
               "Shops"
+            ) : activeView === "profile" ? (
+              "Profile"
+            ) : activeView === "settings" ? (
+              "Settings"
             ) : (
               "Orders"
             )}
@@ -491,6 +604,10 @@ const Dashboard = () => {
               ? "Here's what's happening with your business today."
               : activeView === "shops"
               ? `${shops.length} ${shops.length === 1 ? "shop" : "shops"} under your account.`
+              : activeView === "profile"
+              ? "Manage your account details and password."
+              : activeView === "settings"
+              ? "Manage sensitive, irreversible account actions."
               : `${orders.length} ${orders.length === 1 ? "order" : "orders"} across your shops.`}
           </p>
         </div>
@@ -860,6 +977,198 @@ const Dashboard = () => {
         </section>
           </>
 
+        ) : activeView === "profile" ? (
+
+          <>
+          {/* ===========================
+              PROFILE VIEW (inline, no navigation)
+              =========================== */}
+          {loadingProfile || !profileData ? (
+            <div className="text-center py-16 text-gray-400 text-sm">
+              Loading your profile...
+            </div>
+          ) : (
+            <div className="max-w-2xl space-y-6">
+
+              {/* ACCOUNT DETAILS */}
+              <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                <div className="flex items-center justify-between mb-5">
+                  <h2 className="font-bold text-lg text-gray-900">Account details</h2>
+                  {!editingProfile && (
+                    <button
+                      onClick={handleStartEditProfile}
+                      className="flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-800"
+                    >
+                      <Edit2 size={14} /> Edit
+                    </button>
+                  )}
+                </div>
+
+                {!editingProfile ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 py-2.5 border-b border-gray-50 last:border-0">
+                      <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><User size={15} /></div>
+                      <div className="min-w-0">
+                        <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide">Username</p>
+                        <p className="text-sm font-medium text-gray-800 truncate">{profileData.username}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 py-2.5 border-b border-gray-50 last:border-0">
+                      <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><Mail size={15} /></div>
+                      <div className="min-w-0">
+                        <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide">Email</p>
+                        <p className="text-sm font-medium text-gray-800 truncate">{profileData.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 py-2.5 border-b border-gray-50 last:border-0">
+                      <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><Phone size={15} /></div>
+                      <div className="min-w-0">
+                        <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide">Phone</p>
+                        <p className="text-sm font-medium text-gray-800 truncate">{profileData.phone || "Not set"}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 py-2.5">
+                      <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><MapPin size={15} /></div>
+                      <div className="min-w-0">
+                        <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide">Shop location</p>
+                        <p className="text-sm font-medium text-gray-800 truncate">{profileData.location || "Not set"}</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">Username</label>
+                      <input value={profileDraft.username}
+                        onChange={(e) => setProfileDraft((d) => ({ ...d, username: e.target.value }))}
+                        className={inputClass} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">Email</label>
+                      <input value={profileData.email} disabled
+                        className={`${inputClass} bg-gray-50 text-gray-400 cursor-not-allowed`} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">Phone</label>
+                      <input value={profileDraft.phone} placeholder="e.g. 0712 345 678"
+                        onChange={(e) => setProfileDraft((d) => ({ ...d, phone: e.target.value }))}
+                        className={inputClass} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">Shop location</label>
+                      <input value={profileDraft.location} placeholder="e.g. Kilimani, Nairobi"
+                        onChange={(e) => setProfileDraft((d) => ({ ...d, location: e.target.value }))}
+                        className={inputClass} />
+                    </div>
+
+                    {profileError && <p className="text-xs text-red-500 bg-red-50 px-2 py-1.5 rounded-lg">{profileError}</p>}
+
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        onClick={handleSaveProfile}
+                        disabled={savingProfile}
+                        className="flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition disabled:opacity-50"
+                      >
+                        <Check size={15} /> {savingProfile ? "Saving..." : "Save changes"}
+                      </button>
+                      <button
+                        onClick={handleCancelEditProfile}
+                        disabled={savingProfile}
+                        className="px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-500 hover:text-gray-700"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {profileSuccess && !editingProfile && (
+                  <p className="text-xs text-green-600 font-medium mt-4">{profileSuccess}</p>
+                )}
+              </section>
+
+              {/* CHANGE PASSWORD */}
+              <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                <div className="flex items-center gap-2 mb-5">
+                  <Lock size={16} className="text-blue-600" />
+                  <h2 className="font-bold text-lg text-gray-900">Change password</h2>
+                </div>
+
+                <form onSubmit={handleChangePassword} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">Current password</label>
+                    <input type="password" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} className={inputClass} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">New password</label>
+                    <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className={inputClass} />
+                    <p className="text-[11px] text-gray-400 mt-1">At least 8 characters</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">Confirm new password</label>
+                    <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className={inputClass} />
+                  </div>
+
+                  {passwordError && <p className="text-xs text-red-500">{passwordError}</p>}
+                  {passwordSuccess && <p className="text-xs text-green-600 font-medium">{passwordSuccess}</p>}
+
+                  <button
+                    type="submit"
+                    disabled={changingPassword}
+                    className="flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition disabled:opacity-50"
+                  >
+                    <Lock size={14} /> {changingPassword ? "Updating..." : "Update password"}
+                  </button>
+                </form>
+              </section>
+            </div>
+          )}
+          </>
+
+        ) : activeView === "settings" ? (
+
+          <>
+          {/* ===========================
+              SETTINGS VIEW — Danger Zone
+              =========================== */}
+          <div className="max-w-2xl">
+            <section className="bg-white rounded-2xl border border-red-100 shadow-sm p-6">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle size={18} className="text-red-500" />
+                <h2 className="font-bold text-lg text-gray-900">Danger Zone</h2>
+              </div>
+              <p className="text-sm text-gray-500 mb-5">
+                These actions are permanent and can't be undone. Deleting a shop also removes its services
+                and cannot be recovered.
+              </p>
+
+              {shops.length === 0 ? (
+                <p className="text-sm text-gray-400 py-6 text-center">You have no shops to manage.</p>
+              ) : (
+                <div className="space-y-2">
+                  {shops.map((shop) => (
+                    <div
+                      key={shop.id}
+                      className="flex items-center justify-between gap-3 p-4 border border-red-100 bg-red-50/40 rounded-xl"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-semibold text-gray-900 truncate">{shop.name}</p>
+                        <p className="text-xs text-gray-500">{shop.location}</p>
+                      </div>
+                      <button
+                        onClick={() => handleDelete(shop.id)}
+                        className="flex items-center gap-1.5 shrink-0 border border-red-200 text-red-600 px-3.5 py-2 rounded-lg text-xs font-bold hover:bg-red-600 hover:text-white transition"
+                      >
+                        <Trash2 size={13} /> Delete Shop
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
+          </>
+
         ) : (
 
           /* ===========================
@@ -1096,5 +1405,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
-
