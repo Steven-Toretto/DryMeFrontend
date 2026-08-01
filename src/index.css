@@ -1,1 +1,21 @@
 @import "tailwindcss";
+
+/*
+  Brand override — replaces Tailwind's default "blue" scale with a
+  deliberate denim blue (anchored at 600 = #35548C) instead of the
+  stock Tailwind blue every templated site defaults to. Since every
+  page already uses blue-* utility classes, this one change re-brands
+  the whole site consistently without touching each file.
+*/
+@theme {
+  --color-blue-50:  #F0F4FA;
+  --color-blue-100: #DDE6F2;
+  --color-blue-200: #BBCBE3;
+  --color-blue-300: #93A9CE;
+  --color-blue-400: #6884B4;
+  --color-blue-500: #4A6699;
+  --color-blue-600: #35548C;
+  --color-blue-700: #2A4370;
+  --color-blue-800: #223655;
+  --color-blue-900: #1B2A42;
+}
