@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { createOrder, getShops, getServices } from "../api";
+import { createOrder, getShops, getServices, getProfile } from "../api";
 
 function BookPickup() {
   const navigate = useNavigate();
@@ -19,9 +19,31 @@ function BookPickup() {
     service: "",
     weight: "",
     notes: "",
+    phone: "",
+    location: "",
   });
 
   const [price, setPrice] = useState(0);
+  const [formError, setFormError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  // =========================
+  // 📡 PRE-FILL CONTACT INFO FROM PROFILE
+  // =========================
+  useEffect(() => {
+    (async () => {
+      try {
+        const profile = await getProfile();
+        setForm((prev) => ({
+          ...prev,
+          phone: prev.phone || profile.phone || "",
+          location: prev.location || profile.location || "",
+        }));
+      } catch (err) {
+        console.error("Couldn't load profile for pre-fill:", err.response?.data || err.message);
+      }
+    })();
+  }, []);
 
   // book again btn
   useEffect(() => {
@@ -113,21 +135,31 @@ useEffect(() => {
   // =========================
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFormError("");
 
     if (!form.shop || !form.service || !form.weight) {
-      alert("Fill all fields");
+      setFormError("Fill in the shop, service, and weight.");
+      return;
+    }
+    if (!form.phone.trim()) {
+      setFormError("A phone number is required so the shop can reach you.");
+      return;
+    }
+    if (!form.location.trim()) {
+      setFormError("A pickup location is required.");
       return;
     }
 
+    setSubmitting(true);
     try {
       const payload = {
-        shop_id: parseInt(form.shop),        // ✅ FIXED
-        service_id: parseInt(form.service),  // ✅ FIXED
+        shop_id: parseInt(form.shop),
+        service_id: parseInt(form.service),
         weight: parseFloat(form.weight),
-        notes: form.notes.trim(),
+        customer_notes: form.notes.trim(),
+        customer_phone: form.phone.trim(),
+        customer_location: form.location.trim(),
       };
-
-      console.log("Sending:", payload);
 
       await createOrder(payload);
 
@@ -140,12 +172,17 @@ useEffect(() => {
         service: "",
         weight: "",
         notes: "",
+        phone: form.phone,
+        location: form.location,
       });
 
       setPrice(0);
     } catch (error) {
       console.error("ERROR:", error.response?.data);
-      alert("Failed to place order");
+      const data = error.response?.data;
+      setFormError(data ? Object.values(data).flat().join(" ") : "Failed to place order.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -205,6 +242,27 @@ useEffect(() => {
           required
         />
 
+        {/* Contact + pickup location — required so the shop can actually reach you */}
+        <input
+          name="phone"
+          type="tel"
+          placeholder="Phone number (e.g. 0712 345 678)"
+          value={form.phone}
+          onChange={handleChange}
+          className="w-full border p-2 rounded"
+          required
+        />
+
+        <input
+          name="location"
+          type="text"
+          placeholder="Pickup location (e.g. Kilimani, Nairobi)"
+          value={form.location}
+          onChange={handleChange}
+          className="w-full border p-2 rounded"
+          required
+        />
+
         {/* Notes */}
         <div>
           <textarea
@@ -228,9 +286,13 @@ useEffect(() => {
           </div>
         )}
 
+        {formError && (
+          <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded p-2">{formError}</p>
+        )}
+
         {/* Submit */}
-        <button className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded">
-          Book Pickup
+        <button disabled={submitting} className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded disabled:opacity-50">
+          {submitting ? "Booking..." : "Book Pickup"}
         </button>
       </form>
     </div>
@@ -238,5 +300,3 @@ useEffect(() => {
 }
 
 export default BookPickup;
-
-

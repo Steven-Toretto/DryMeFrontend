@@ -4,6 +4,7 @@ import {
   getServices,
   createOrder,
   getShop,
+  getProfile,
 } from "../api";
 
 function ShopDetails() {
@@ -24,6 +25,8 @@ function ShopDetails() {
 
   const [weight, setWeight] = useState(1);
   const [notes, setNotes] = useState("");
+  const [phone, setPhone] = useState("");
+  const [pickupLocation, setPickupLocation] = useState("");
 
   const [price, setPrice] = useState(0);
 
@@ -34,6 +37,21 @@ function ShopDetails() {
   const [error, setError] = useState("");
 
   const [success, setSuccess] = useState("");
+
+  // ===============================
+  // PRE-FILL CONTACT INFO FROM PROFILE
+  // ===============================
+  useEffect(() => {
+    (async () => {
+      try {
+        const profile = await getProfile();
+        setPhone((prev) => prev || profile.phone || "");
+        setPickupLocation((prev) => prev || profile.location || "");
+      } catch (err) {
+        console.error("Couldn't load profile for pre-fill:", err.response?.data || err.message);
+      }
+    })();
+  }, []);
 
   // ===============================
   // FETCHING SHOP + SERVICES
@@ -223,6 +241,16 @@ function ShopDetails() {
       return;
     }
 
+    if (!phone.trim()) {
+      setError("A phone number is required so the shop can reach you.");
+      return;
+    }
+
+    if (!pickupLocation.trim()) {
+      setError("A pickup location is required.");
+      return;
+    }
+
     try {
 
       setLoading(true);
@@ -232,6 +260,8 @@ function ShopDetails() {
         service_id: Number(selectedService),
         weight: Number(weight),
         customer_notes: notes.trim() || null,
+        customer_phone: phone.trim(),
+        customer_location: pickupLocation.trim(),
       };
 
       await createOrder(payload);
@@ -431,6 +461,30 @@ function ShopDetails() {
               className="w-full mb-4 rounded-xl border border-gray-200 px-3 py-3 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
             />
 
+            {/* PHONE */}
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Phone number
+            </label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="e.g. 0712 345 678"
+              className="w-full mb-4 rounded-xl border border-gray-200 px-3 py-3 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
+            />
+
+            {/* PICKUP LOCATION */}
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Pickup location
+            </label>
+            <input
+              type="text"
+              value={pickupLocation}
+              onChange={(e) => setPickupLocation(e.target.value)}
+              placeholder="e.g. Kilimani, Nairobi"
+              className="w-full mb-4 rounded-xl border border-gray-200 px-3 py-3 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
+            />
+
             {/* NOTES */}
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Notes <span className="text-gray-400 font-normal">(optional)</span>
@@ -490,5 +544,3 @@ function ShopDetails() {
 }
 
 export default ShopDetails;
-
-
