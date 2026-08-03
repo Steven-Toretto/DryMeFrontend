@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { MapPin, CheckCircle2 } from "lucide-react";
 import {
   getServices,
   createOrder,
@@ -13,6 +14,10 @@ function ShopDetails() {
 
   const navigate = useNavigate();
 
+  const [searchParams] = useSearchParams();
+  const preselectService = searchParams.get("service");
+  const preselectWeight = searchParams.get("weight");
+
   // ===============================
   // STATES
   // ===============================
@@ -21,12 +26,18 @@ function ShopDetails() {
   const [services, setServices] = useState([]);
 
   const [selectedService, setSelectedService] =
-    useState("");
+    useState(preselectService || "");
 
-  const [weight, setWeight] = useState(1);
+  const [weight, setWeight] = useState(preselectWeight ? Number(preselectWeight) : 1);
   const [notes, setNotes] = useState("");
   const [phone, setPhone] = useState("");
   const [pickupLocation, setPickupLocation] = useState("");
+
+  // 📍 Exact GPS pin, captured on demand — optional, on top of the
+  // required text landmark field above.
+  const [pickupCoords, setPickupCoords] = useState(null); // { lat, lng }
+  const [locatingGPS, setLocatingGPS] = useState(false);
+  const [gpsError, setGpsError] = useState("");
 
   const [price, setPrice] = useState(0);
 
@@ -52,6 +63,41 @@ function ShopDetails() {
       }
     })();
   }, []);
+
+  // ===============================
+  // 📍 CAPTURE EXACT GPS PIN
+  // ===============================
+  const handleUseMyLocation = () => {
+    setGpsError("");
+
+    if (!navigator.geolocation) {
+      setGpsError("Location isn't supported on this browser.");
+      return;
+    }
+
+    setLocatingGPS(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        // Round to 6 decimal places — matches the backend's DecimalField
+        // (max_digits=9, decimal_places=6). Raw browser coordinates can
+        // carry far more precision than that and get rejected as invalid.
+        setPickupCoords({
+          lat: Number(position.coords.latitude.toFixed(6)),
+          lng: Number(position.coords.longitude.toFixed(6)),
+        });
+        setLocatingGPS(false);
+      },
+      (err) => {
+        setLocatingGPS(false);
+        if (err.code === err.PERMISSION_DENIED) {
+          setGpsError("Location permission denied — you can still describe the spot below.");
+        } else {
+          setGpsError("Couldn't get your location. Try again, or just describe the spot below.");
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   // ===============================
   // FETCHING SHOP + SERVICES
@@ -262,6 +308,10 @@ function ShopDetails() {
         customer_notes: notes.trim() || null,
         customer_phone: phone.trim(),
         customer_location: pickupLocation.trim(),
+        ...(pickupCoords && {
+          pickup_lat: pickupCoords.lat,
+          pickup_lng: pickupCoords.lng,
+        }),
       };
 
       await createOrder(payload);
@@ -474,16 +524,42 @@ function ShopDetails() {
             />
 
             {/* PICKUP LOCATION */}
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Pickup location
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Pickup location
+              </label>
+              <button
+                type="button"
+                onClick={handleUseMyLocation}
+                disabled={locatingGPS}
+                className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 disabled:opacity-50"
+              >
+                <MapPin size={13} />
+                {locatingGPS ? "Locating..." : pickupCoords ? "Update pin" : "Use my current location"}
+              </button>
+            </div>
             <input
               type="text"
               value={pickupLocation}
               onChange={(e) => setPickupLocation(e.target.value)}
-              placeholder="e.g. Kilimani, Nairobi"
-              className="w-full mb-4 rounded-xl border border-gray-200 px-3 py-3 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
+              placeholder="e.g. Blue gate opposite Java House, Apt 4B"
+              className="w-full rounded-xl border border-gray-200 px-3 py-3 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
             />
+            <div className="mb-4 mt-1.5">
+              {pickupCoords && (
+                <p className="flex items-center gap-1 text-xs font-medium text-green-600">
+                  <CheckCircle2 size={12} /> Exact pin captured — drivers will get precise directions.
+                </p>
+              )}
+              {gpsError && (
+                <p className="text-xs text-amber-600">{gpsError}</p>
+              )}
+              {!pickupCoords && !gpsError && (
+                <p className="text-xs text-gray-400">
+                  A neighborhood name alone can be hard to find — add a landmark, or tap "Use my current location" for an exact pin.
+                </p>
+              )}
+            </div>
 
             {/* NOTES */}
             <label className="block text-sm font-medium text-gray-700 mb-2">

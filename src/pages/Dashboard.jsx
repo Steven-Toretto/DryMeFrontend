@@ -43,6 +43,24 @@ const STAMP_STYLES = {
   cancelled: { label: "VOID",      ink: "#6B675D" },
 };
 
+// Prefer the exact GPS pin captured at booking over a text search,
+// which only centers a whole neighborhood.
+function getMapInfo(order) {
+  if (order.pickup_lat && order.pickup_lng) {
+    return {
+      url: `https://www.google.com/maps?q=${order.pickup_lat},${order.pickup_lng}`,
+      label: "Exact pin",
+    };
+  }
+  if (order.customer_location) {
+    return {
+      url: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.customer_location)}`,
+      label: "Map",
+    };
+  }
+  return null;
+}
+
 function getStamp(status) {
   return STAMP_STYLES[status] || { label: (status || "—").toUpperCase(), ink: "#6B675D" };
 }
@@ -1324,11 +1342,11 @@ const Dashboard = () => {
                                 <Phone size={11} /> Call
                               </a>
                             )}
-                            {order.customer_location && (
-                              <a href={`https://www.google.com/maps/search/?api=1&query=${order.customer_location}`}
+                            {getMapInfo(order) && (
+                              <a href={getMapInfo(order).url}
                                 target="_blank" rel="noreferrer"
                                 className="flex items-center gap-1 font-semibold hover:underline" style={{ color: "#3F6B47" }}>
-                                <MapPin size={11} /> Map
+                                <MapPin size={11} /> {getMapInfo(order).label}
                               </a>
                             )}
                           </div>

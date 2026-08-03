@@ -1,7 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 
 // Pages
-import BookPickup from "../pages/BookPickup";
 import Orders from "../pages/Orders";
 import Layout from "../pages/Layout";
 import Shops from "../pages/Shops";
@@ -33,7 +32,6 @@ export default function Router() {
         <Route path="services" element={<Services />} />
         <Route path="about" element={<About />} />
         <Route path="contact" element={<Contact />} />
-        <Route path="book-pickup" element={<BookPickup />} />
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
 
@@ -80,3 +78,4 @@ export default function Router() {
     </Routes>
   );
 }
+

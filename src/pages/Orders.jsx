@@ -56,6 +56,24 @@ function StatusStamp({ status, rotate = -4 }) {
   );
 }
 
+// Prefer the exact GPS pin captured at booking over a text search,
+// which only centers a whole neighborhood.
+function getMapInfo(order) {
+  if (order.pickup_lat && order.pickup_lng) {
+    return {
+      url: `https://www.google.com/maps?q=${order.pickup_lat},${order.pickup_lng}`,
+      label: "Exact pin",
+    };
+  }
+  if (order.customer_location) {
+    return {
+      url: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.customer_location)}`,
+      label: "Map",
+    };
+  }
+  return null;
+}
+
 function getPaymentLabel(ps) {
   switch (ps) {
     case "paid":            return { label: "Paid", ink: "#3F6B47" };
@@ -288,7 +306,7 @@ function Orders() {
   };
 
   const handleBookAgain = (order) => {
-    navigate(`/book-pickup?shop=${order.shop.id}&service=${order.service.id}&weight=${order.weight}`);
+    navigate(`/shop/${order.shop.id}?service=${order.service.id}&weight=${order.weight}`);
   };
 
   // ===========================
@@ -749,10 +767,61 @@ function Orders() {
                       </div>
                     )}
 
+                    {/* CUSTOMER INFO — OWNER ONLY, always visible: this is core
+                        info an owner needs on every glance, not secondary reference */}
+                    {role === "owner" && (
+                      <div className="mb-5 p-4 border rounded-sm" style={{ borderColor: `${INK}1A` }}>
+                        <p className="text-[11px] font-bold uppercase tracking-wide mb-3" style={{ fontFamily: TICKET_FONT, color: `${INK}60` }}>
+                          Customer Info
+                        </p>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span style={{ color: `${INK}70` }}>Name</span>
+                            <span className="font-semibold" style={{ color: INK }}>{order.user?.username}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span style={{ color: `${INK}70` }}>Phone</span>
+                            <span className="font-semibold" style={{ color: INK }}>{order.customer_phone || "N/A"}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span style={{ color: `${INK}70` }}>Location</span>
+                            <span className="font-semibold" style={{ color: INK }}>{order.customer_location || "N/A"}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span style={{ color: `${INK}70` }}>Payment</span>
+                            <span className="font-semibold text-xs" style={{ fontFamily: TICKET_FONT, color: paymentInfo.ink }}>
+                              {paymentInfo.label.toUpperCase()}
+                            </span>
+                          </div>
+                          {order.payment_status === "paid" && order.mpesa_transaction_code && (
+                            <div className="flex justify-between">
+                              <span style={{ color: `${INK}70` }}>M-Pesa Code</span>
+                              <span className="font-semibold text-xs" style={{ color: "#3F6B47" }}>{order.mpesa_transaction_code}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex gap-3 mt-3 pt-3 border-t" style={{ borderColor: `${INK}15` }}>
+                          {order.customer_phone && (
+                            <a href={`tel:${order.customer_phone}`}
+                              className="flex items-center gap-1.5 text-xs font-semibold hover:underline" style={{ color: "#35548C" }}>
+                              <Phone size={12} /> Call
+                            </a>
+                          )}
+                          {getMapInfo(order) && (
+                            <a href={getMapInfo(order).url}
+                              target="_blank" rel="noreferrer"
+                              className="flex items-center gap-1.5 text-xs font-semibold hover:underline" style={{ color: "#3F6B47" }}>
+                              <MapPin size={12} /> {getMapInfo(order).label}
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
                     {/* ============================================ */}
-                    {/* DETAILS DISCLOSURE — reference info, tucked away */}
+                    {/* DETAILS DISCLOSURE — timeline only, tucked away */}
                     {/* ============================================ */}
-                    {(role === "owner" || hasTimelineExtras) && (
+                    {hasTimelineExtras && (
                       <div className="pt-4 border-t border-dashed" style={{ borderColor: `${INK}20` }}>
                         <button
                           onClick={() => toggleExpanded(order.id)}
@@ -760,61 +829,11 @@ function Orders() {
                           style={{ fontFamily: TICKET_FONT, color: `${INK}60` }}
                         >
                           <ChevronDown size={13} style={{ transform: isExpanded ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
-                          {isExpanded ? "Hide details" : "Customer info & timeline"}
+                          {isExpanded ? "Hide timeline" : "Show timeline"}
                         </button>
 
                         {isExpanded && (
                           <div className="mt-4 space-y-5">
-
-                            {/* OWNER INFO */}
-                            {role === "owner" && (
-                              <div>
-                                <p className="text-[11px] font-bold uppercase tracking-wide mb-3" style={{ fontFamily: TICKET_FONT, color: `${INK}60` }}>
-                                  Customer Info
-                                </p>
-                                <div className="space-y-2 text-sm">
-                                  <div className="flex justify-between">
-                                    <span style={{ color: `${INK}70` }}>Name</span>
-                                    <span className="font-semibold" style={{ color: INK }}>{order.user?.username}</span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span style={{ color: `${INK}70` }}>Phone</span>
-                                    <span className="font-semibold" style={{ color: INK }}>{order.customer_phone || "N/A"}</span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span style={{ color: `${INK}70` }}>Location</span>
-                                    <span className="font-semibold" style={{ color: INK }}>{order.customer_location || "N/A"}</span>
-                                  </div>
-                                  <div className="flex justify-between items-center">
-                                    <span style={{ color: `${INK}70` }}>Payment</span>
-                                    <span className="font-semibold text-xs" style={{ fontFamily: TICKET_FONT, color: paymentInfo.ink }}>
-                                      {paymentInfo.label.toUpperCase()}
-                                    </span>
-                                  </div>
-                                  {order.payment_status === "paid" && order.mpesa_transaction_code && (
-                                    <div className="flex justify-between">
-                                      <span style={{ color: `${INK}70` }}>M-Pesa Code</span>
-                                      <span className="font-semibold text-xs" style={{ color: "#3F6B47" }}>{order.mpesa_transaction_code}</span>
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="flex gap-3 mt-3 pt-3 border-t" style={{ borderColor: `${INK}15` }}>
-                                  {order.customer_phone && (
-                                    <a href={`tel:${order.customer_phone}`}
-                                      className="flex items-center gap-1.5 text-xs font-semibold hover:underline" style={{ color: "#35548C" }}>
-                                      <Phone size={12} /> Call
-                                    </a>
-                                  )}
-                                  {order.customer_location && (
-                                    <a href={`https://www.google.com/maps/search/?api=1&query=${order.customer_location}`}
-                                      target="_blank" rel="noreferrer"
-                                      className="flex items-center gap-1.5 text-xs font-semibold hover:underline" style={{ color: "#3F6B47" }}>
-                                      <MapPin size={12} /> Map
-                                    </a>
-                                  )}
-                                </div>
-                              </div>
-                            )}
 
                             {/* TIMELINE — printed like a stamped log */}
                             <div>
@@ -865,4 +884,3 @@ function Orders() {
 }
 
 export default Orders;
-
