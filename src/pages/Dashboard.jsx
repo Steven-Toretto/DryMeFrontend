@@ -126,11 +126,15 @@ const Dashboard = () => {
   const [decliningSubmitId, setDecliningSubmitId] = useState(null);
   const [declineError, setDeclineError] = useState("");
 
-  const [shopForm, setShopForm] = useState({ name: "", location: "", description: "", image: null });
+  const [shopForm, setShopForm] = useState({ name: "", location: "", description: "", image: null, lat: null, lng: null });
+  const [locatingShopGPS, setLocatingShopGPS] = useState(false);
+  const [shopGpsError, setShopGpsError] = useState("");
   const [serviceForm, setServiceForm] = useState({ shop: "", name: "", price: "", pricing_type: "per_kg" });
 
   const [editingShopId, setEditingShopId] = useState(null);
-  const [editShopForm, setEditShopForm] = useState({ name: "", location: "", description: "", image: null });
+  const [editShopForm, setEditShopForm] = useState({ name: "", location: "", description: "", image: null, lat: null, lng: null });
+  const [locatingEditShopGPS, setLocatingEditShopGPS] = useState(false);
+  const [editShopGpsError, setEditShopGpsError] = useState("");
   const [editShopPreview, setEditShopPreview] = useState("");
   const [savingShopEdit, setSavingShopEdit] = useState(false);
   const [editShopError, setEditShopError] = useState("");
@@ -326,7 +330,10 @@ const Dashboard = () => {
       location: shop.location || "",
       description: shop.description || "",
       image: null,
+      lat: shop.lat ?? null,
+      lng: shop.lng ?? null,
     });
+    setEditShopGpsError("");
 
     let imageUrl = "";
     if (shop.image) {
@@ -349,6 +356,56 @@ const Dashboard = () => {
     setEditShopPreview(URL.createObjectURL(file));
   };
 
+  // 📍 GPS capture — same pattern as the customer-facing pickup pin,
+  // rounded to 6 decimal places to avoid the precision-rejection bug.
+  const handleUseLocationForNewShop = () => {
+    setShopGpsError("");
+    if (!navigator.geolocation) {
+      setShopGpsError("Location isn't supported on this browser.");
+      return;
+    }
+    setLocatingShopGPS(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setShopForm((prev) => ({
+          ...prev,
+          lat: Number(position.coords.latitude.toFixed(6)),
+          lng: Number(position.coords.longitude.toFixed(6)),
+        }));
+        setLocatingShopGPS(false);
+      },
+      () => {
+        setLocatingShopGPS(false);
+        setShopGpsError("Couldn't get your location. Try again, or skip this — you can add it later.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  const handleUseLocationForEditShop = () => {
+    setEditShopGpsError("");
+    if (!navigator.geolocation) {
+      setEditShopGpsError("Location isn't supported on this browser.");
+      return;
+    }
+    setLocatingEditShopGPS(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setEditShopForm((prev) => ({
+          ...prev,
+          lat: Number(position.coords.latitude.toFixed(6)),
+          lng: Number(position.coords.longitude.toFixed(6)),
+        }));
+        setLocatingEditShopGPS(false);
+      },
+      () => {
+        setLocatingEditShopGPS(false);
+        setEditShopGpsError("Couldn't get your location. Try again, or skip this — you can add it later.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   const handleSaveShopEdit = async (shopId) => {
     if (!editShopForm.name || !editShopForm.location || !editShopForm.description) {
       setEditShopError("All fields are required.");
@@ -361,6 +418,8 @@ const Dashboard = () => {
       formData.append("name", editShopForm.name);
       formData.append("location", editShopForm.location);
       formData.append("description", editShopForm.description);
+      if (editShopForm.lat != null) formData.append("lat", editShopForm.lat);
+      if (editShopForm.lng != null) formData.append("lng", editShopForm.lng);
       if (editShopForm.image instanceof File) {
         formData.append("image", editShopForm.image);
       }
@@ -383,10 +442,12 @@ const Dashboard = () => {
       formData.append("name", shopForm.name);
       formData.append("location", shopForm.location);
       formData.append("description", shopForm.description);
+      if (shopForm.lat != null) formData.append("lat", shopForm.lat);
+      if (shopForm.lng != null) formData.append("lng", shopForm.lng);
       if (shopForm.image instanceof File) formData.append("image", shopForm.image);
       await createShop(formData);
       setShopMessage("Shop created successfully!");
-      setShopForm({ name: "", location: "", description: "", image: null });
+      setShopForm({ name: "", location: "", description: "", image: null, lat: null, lng: null });
       document.getElementById("shop-image-input").value = "";
       fetchShops();
     } catch (error) {
@@ -604,7 +665,7 @@ const Dashboard = () => {
                     className={`w-full flex items-center justify-between px-3 py-2.5 rounded-sm transition text-sm font-medium ${
                       activeView === item.view ? "bg-white/10" : "hover:bg-white/5"
                     }`}
-                    style={activeView === item.view ? { borderLeft: "3px solid #B5811E" } : { borderLeft: "3px solid transparent" }}
+                    style={activeView === item.view ? { borderLeft: "3px solid #35548C" } : { borderLeft: "3px solid transparent" }}
                   >
                     <div className="flex items-center gap-3">
                       {item.icon}
@@ -806,6 +867,28 @@ const Dashboard = () => {
                           <input type="text" placeholder="Location" value={editShopForm.location}
                             onChange={(e) => setEditShopForm({ ...editShopForm, location: e.target.value })}
                             className={inputClass} />
+
+                          <div>
+                            <button
+                              type="button"
+                              onClick={handleUseLocationForEditShop}
+                              disabled={locatingEditShopGPS}
+                              className="flex items-center gap-1.5 text-xs font-semibold hover:opacity-80 disabled:opacity-50"
+                              style={{ color: "#35548C" }}
+                            >
+                              <MapPin size={13} />
+                              {locatingEditShopGPS ? "Locating..." : editShopForm.lat ? "Update pin" : "Pin exact location on map"}
+                            </button>
+                            {editShopForm.lat && (
+                              <p className="flex items-center gap-1 text-xs font-medium text-green-600 mt-1">
+                                <CheckCircle2 size={12} /> Pin set — customers will see this shop on the map.
+                              </p>
+                            )}
+                            {editShopGpsError && (
+                              <p className="text-xs text-amber-600 mt-1">{editShopGpsError}</p>
+                            )}
+                          </div>
+
                           <textarea rows={3} placeholder="Description" value={editShopForm.description}
                             onChange={(e) => setEditShopForm({ ...editShopForm, description: e.target.value })}
                             className={`${inputClass} resize-none`} />
@@ -966,6 +1049,28 @@ const Dashboard = () => {
               <input type="text" placeholder="Location" required value={shopForm.location}
                 onChange={(e) => setShopForm({ ...shopForm, location: e.target.value })}
                 className={inputClass} />
+
+              <div>
+                <button
+                  type="button"
+                  onClick={handleUseLocationForNewShop}
+                  disabled={locatingShopGPS}
+                  className="flex items-center gap-1.5 text-xs font-semibold hover:opacity-80 disabled:opacity-50"
+                  style={{ color: "#35548C" }}
+                >
+                  <MapPin size={13} />
+                  {locatingShopGPS ? "Locating..." : shopForm.lat ? "Update pin" : "Pin exact location on map"}
+                </button>
+                {shopForm.lat && (
+                  <p className="flex items-center gap-1 text-xs font-medium text-green-600 mt-1">
+                    <CheckCircle2 size={12} /> Pin set — customers will see this shop on the map.
+                  </p>
+                )}
+                {shopGpsError && (
+                  <p className="text-xs text-amber-600 mt-1">{shopGpsError}</p>
+                )}
+              </div>
+
               <textarea rows={3} placeholder="Description" required value={shopForm.description}
                 onChange={(e) => setShopForm({ ...shopForm, description: e.target.value })}
                 className={`${inputClass} resize-none`} />

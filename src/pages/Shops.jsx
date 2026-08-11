@@ -204,6 +204,18 @@ function Shops() {
                       <MapPin size={11} className="text-red-400 shrink-0" />
                       {shop.location}
                     </p>
+                    {shop.lat && shop.lng && (
+                      <a
+                        href={`https://www.google.com/maps?q=${shop.lat},${shop.lng}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-1 text-xs font-semibold mt-1 hover:underline"
+                        style={{ color: "#35548C" }}
+                      >
+                        <MapPin size={11} /> View on map
+                      </a>
+                    )}
                     {shop.review_count > 0 ? (
                       <p className="flex items-center gap-1 text-xs mt-1.5">
                         <Star size={12} fill="#B5811E" style={{ color: "#B5811E" }} />

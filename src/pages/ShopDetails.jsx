@@ -491,6 +491,44 @@ function ShopDetails() {
               {shop.location}
             </p>
 
+            {/* MAP — real pin if the owner has set one, otherwise an honest fallback */}
+            {shop.lat && shop.lng ? (
+              <div className="mt-4 rounded-xl overflow-hidden border border-gray-100">
+                <iframe
+                  title={`${shop.name} location`}
+                  src={`https://www.google.com/maps?q=${shop.lat},${shop.lng}&output=embed`}
+                  width="100%"
+                  height="220"
+                  style={{ border: 0 }}
+                  loading="lazy"
+                />
+                <a
+                  href={`https://www.google.com/maps?q=${shop.lat},${shop.lng}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-center gap-1.5 text-xs font-semibold py-2.5 bg-gray-50 hover:bg-gray-100 transition"
+                  style={{ color: "#35548C" }}
+                >
+                  <MapPin size={13} /> Open in Google Maps
+                </a>
+              </div>
+            ) : (
+              <div className="mt-4 rounded-xl border border-dashed border-gray-200 p-4 text-center">
+                <p className="text-xs text-gray-400">
+                  This shop hasn't pinned their exact location yet.
+                </p>
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(shop.location)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold mt-1.5 hover:underline"
+                  style={{ color: "#35548C" }}
+                >
+                  <MapPin size={13} /> Search "{shop.location}" on Google Maps
+                </a>
+              </div>
+            )}
+
             <p className="mt-4 text-gray-700 leading-relaxed">
               {shop.description}
             </p>

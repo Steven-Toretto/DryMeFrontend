@@ -74,67 +74,7 @@ function Content() {
         </div>
       </section>
 
-      {/* ── SERVICES ── */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-6">
-
-          <div className="flex items-end justify-between mb-10">
-            <div>
-              <span className="inline-block text-blue-600 font-bold text-xs tracking-widest uppercase mb-3">
-                What we offer
-              </span>
-              <h2 className="text-3xl md:text-4xl font-black text-gray-900">
-                Shops' Services
-              </h2>
-            </div>
-            <Link to="/services" className="text-sm font-semibold text-blue-600 hover:underline shrink-0">
-              View all services →
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { img: laundryImg, title: "Laundry", tag: "Popular", price: "KES 120 / kg", desc: "Wash, dry and fold with eco detergents." },
-              { img: dryCleaningImg, title: "Dry Cleaning", tag: "Premium", price: "KES 250 / item", desc: "Delicate care for special fabrics." },
-              { img: ironingImg, title: "Ironing", tag: "Quick", price: "KES 60 / item", desc: "Crisp, wrinkle-free clothes." },
-              { img: ironingImg2, title: "Folding & Packaging", tag: "Careful", price: "KES 40 / item", desc: "Neatly folded and packaged clothes." },
-            ].map((svc) => (
-              <div
-                key={svc.title}
-                className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-lg transition group"
-              >
-                <div className="relative h-44 overflow-hidden">
-                  <img
-                    src={svc.img}
-                    alt={svc.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                  />
-                  <span className="absolute left-4 top-4 bg-white/95 text-xs text-gray-800 px-3 py-1 rounded-full font-semibold shadow-sm">
-                    {svc.tag}
-                  </span>
-                </div>
-                <div className="p-5 flex-1 flex flex-col">
-                  <h3 className="font-bold text-lg text-gray-900">{svc.title}</h3>
-                  <p className="text-sm text-gray-500 mt-2 flex-1">{svc.desc}</p>
-                  <div className="mt-4 flex items-center justify-between">
-                    <div>
-                      <div className="text-xs text-gray-400">From</div>
-                      <div className="text-lg font-black text-gray-900">{svc.price}</div>
-                    </div>
-                    <Link
-                      to="/shops"
-                      className="bg-gradient-to-r from-blue-600 to-blue-500 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:from-blue-700 hover:to-blue-600 transition"
-                    >
-                      View Shops
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-        </div>
-      </section>
+      
 
       {/* ── FEATURED SHOPS ── */}
       <section className="py-20 bg-gray-50">
@@ -210,6 +150,68 @@ function Content() {
               ))}
             </div>
           )}
+
+        </div>
+      </section>
+
+      {/* ── SERVICES ── */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+
+          <div className="flex items-end justify-between mb-10">
+            <div>
+              <span className="inline-block text-blue-600 font-bold text-xs tracking-widest uppercase mb-3">
+                What we offer
+              </span>
+              <h2 className="text-3xl md:text-4xl font-black text-gray-900">
+                Shops' Services
+              </h2>
+            </div>
+            <Link to="/services" className="text-sm font-semibold text-blue-600 hover:underline shrink-0">
+              View all services →
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { img: laundryImg, title: "Laundry", tag: "Popular", price: "KES 120 / kg", desc: "Wash, dry and fold with eco detergents." },
+              { img: dryCleaningImg, title: "Dry Cleaning", tag: "Premium", price: "KES 250 / item", desc: "Delicate care for special fabrics." },
+              { img: ironingImg, title: "Ironing", tag: "Quick", price: "KES 60 / item", desc: "Crisp, wrinkle-free clothes." },
+              { img: ironingImg2, title: "Folding & Packaging", tag: "Careful", price: "KES 40 / item", desc: "Neatly folded and packaged clothes." },
+            ].map((svc) => (
+              <div
+                key={svc.title}
+                className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-lg transition group"
+              >
+                <div className="relative h-44 overflow-hidden">
+                  <img
+                    src={svc.img}
+                    alt={svc.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                  />
+                  <span className="absolute left-4 top-4 bg-white/95 text-xs text-gray-800 px-3 py-1 rounded-full font-semibold shadow-sm">
+                    {svc.tag}
+                  </span>
+                </div>
+                <div className="p-5 flex-1 flex flex-col">
+                  <h3 className="font-bold text-lg text-gray-900">{svc.title}</h3>
+                  <p className="text-sm text-gray-500 mt-2 flex-1">{svc.desc}</p>
+                  <div className="mt-4 flex items-center justify-between">
+                    <div>
+                      <div className="text-xs text-gray-400">From</div>
+                      <div className="text-lg font-black text-gray-900">{svc.price}</div>
+                    </div>
+                    <Link
+                      to="/shops"
+                      className="bg-gradient-to-r from-blue-600 to-blue-500 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:from-blue-700 hover:to-blue-600 transition"
+                    >
+                      View Shops
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
 
         </div>
       </section>
