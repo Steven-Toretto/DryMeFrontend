@@ -185,6 +185,19 @@ export const cancelOrder = async (id) => {
   return res.data;
 };
 
+// ===============================
+// ⭐ REVIEWS
+// ===============================
+export const submitReview = async (orderId, rating, comment) => {
+  const res = await API.post(`orders/${orderId}/review/`, { rating, comment });
+  return res.data;
+};
+
+export const getShopReviews = async (shopId) => {
+  const res = await API.get(`shops/${shopId}/reviews/`);
+  return res.data;
+};
+
 export const updateOrderNotes = async (id, notes) => {
   const res = await API.put(`orders/${id}/notes/`, { notes });
   return res.data;

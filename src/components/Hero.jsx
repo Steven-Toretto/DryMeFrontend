@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { Zap, MapPin, CreditCard, Shirt, Star } from "lucide-react";
@@ -164,5 +165,6 @@ function Hero() {
 }
 
 export default Hero;
+
 
 

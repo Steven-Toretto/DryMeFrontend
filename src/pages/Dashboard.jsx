@@ -127,7 +127,7 @@ const Dashboard = () => {
   const [declineError, setDeclineError] = useState("");
 
   const [shopForm, setShopForm] = useState({ name: "", location: "", description: "", image: null });
-  const [serviceForm, setServiceForm] = useState({ shop: "", name: "", price_per_kg: "" });
+  const [serviceForm, setServiceForm] = useState({ shop: "", name: "", price: "", pricing_type: "per_kg" });
 
   const [editingShopId, setEditingShopId] = useState(null);
   const [editShopForm, setEditShopForm] = useState({ name: "", location: "", description: "", image: null });
@@ -402,7 +402,7 @@ const Dashboard = () => {
     try {
       await createService(serviceForm);
       setServiceMessage("Service added successfully!");
-      setServiceForm({ shop: "", name: "", price_per_kg: "" });
+      setServiceForm({ shop: "", name: "", price: "", pricing_type: "per_kg" });
     } catch (error) {
       console.error("Create service error:", error);
       setServiceMessage("Failed to create service");
@@ -421,7 +421,7 @@ const Dashboard = () => {
   const handleEditService = async (serviceId, shopId) => {
     if (!editingService) return;
     try {
-      await updateService(serviceId, { name: editingService.name, price_per_kg: editingService.price_per_kg });
+      await updateService(serviceId, { name: editingService.name, price: editingService.price });
       setEditServiceMessage("Service updated!");
       setEditingService(null);
       fetchShopServices(shopId);
@@ -502,7 +502,7 @@ const Dashboard = () => {
   if (!token || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full" />
+        <div className="animate-spin w-10 h-10 border-4 border-[#BBCBE3] border-t-[#35548C] rounded-full" />
       </div>
     );
   }
@@ -521,7 +521,7 @@ const Dashboard = () => {
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const thisWeekOrders = orders.filter(o => new Date(o.created_at) >= weekAgo).length;
 
-  const inputClass = "w-full border border-gray-200 bg-gray-50 rounded-sm px-4 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition";
+  const inputClass = "w-full border border-gray-200 bg-gray-50 rounded-sm px-4 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4A6699] focus:border-transparent focus:bg-white transition";
 
   return (
     <div className="min-h-screen flex" style={{ background: "#F1EAD8" }}>
@@ -818,7 +818,7 @@ const Dashboard = () => {
                             <label className="block text-xs font-semibold text-gray-600 mb-1.5">Replace Image</label>
                             <input type="file" accept="image/*"
                               onChange={(e) => handleEditShopImageChange(e.target.files[0])}
-                              className="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100" />
+                              className="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#F0F4FA] file:text-[#35548C] hover:file:bg-[#DDE6F2]" />
                           </div>
 
                           {editShopError && (
@@ -882,7 +882,7 @@ const Dashboard = () => {
                                     fetchShopServices(shop.id);
                                   }
                                 }}
-                                className="text-xs text-blue-500 hover:underline font-medium"
+                                className="text-xs text-[#4A6699] hover:underline font-medium"
                               >
                                 {shopServices[shop.id] ? "Hide" : "Load"}
                               </button>
@@ -896,22 +896,22 @@ const Dashboard = () => {
                               {(shopServices[shop.id] || []).map((service) => (
                                 <div key={service.id}>
                                   {editingService?.id === service.id ? (
-                                    <div className="flex gap-2 items-center bg-blue-50 rounded-sm p-2">
+                                    <div className="flex gap-2 items-center bg-[#F0F4FA] rounded-sm p-2">
                                       <input
                                         type="text"
                                         value={editingService.name}
                                         onChange={(e) => setEditingService({ ...editingService, name: e.target.value })}
-                                        className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs flex-1 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                        className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs flex-1 focus:outline-none focus:ring-1 focus:ring-[#6884B4]"
                                       />
                                       <input
                                         type="number"
-                                        value={editingService.price_per_kg}
-                                        onChange={(e) => setEditingService({ ...editingService, price_per_kg: e.target.value })}
-                                        className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-20 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                        value={editingService.price}
+                                        onChange={(e) => setEditingService({ ...editingService, price: e.target.value })}
+                                        className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs w-20 focus:outline-none focus:ring-1 focus:ring-[#6884B4]"
                                       />
                                       <button
                                         onClick={() => handleEditService(service.id, shop.id)}
-                                        className="text-xs bg-blue-600 text-white px-2.5 py-1.5 rounded-lg hover:bg-blue-700"
+                                        className="text-xs bg-[#35548C] text-white px-2.5 py-1.5 rounded-lg hover:bg-[#2A4370]"
                                       >Save</button>
                                       <button
                                         onClick={() => setEditingService(null)}
@@ -922,12 +922,14 @@ const Dashboard = () => {
                                     <div className="flex items-center justify-between bg-gray-50 rounded-sm px-3 py-2">
                                       <div>
                                         <span className="text-sm font-semibold text-gray-800">{service.name}</span>
-                                        <span className="text-xs text-gray-400 ml-2">KES {service.price_per_kg}/kg</span>
+                                        <span className="text-xs text-gray-400 ml-2">
+                                          KES {service.price}{service.pricing_type === "per_item" ? "/item" : "/kg"}
+                                        </span>
                                       </div>
                                       <div className="flex gap-3">
                                         <button
-                                          onClick={() => setEditingService({ id: service.id, name: service.name, price_per_kg: service.price_per_kg })}
-                                          className="text-xs text-blue-500 hover:underline font-medium"
+                                          onClick={() => setEditingService({ id: service.id, name: service.name, price: service.price })}
+                                          className="text-xs text-[#4A6699] hover:underline font-medium"
                                         >Edit</button>
                                         <button
                                           onClick={() => handleDeleteService(service.id, shop.id)}
@@ -953,7 +955,7 @@ const Dashboard = () => {
           <aside className="bg-[#FBF8EF] rounded-sm border border-[#2B2A25]/10 shadow-sm p-6 h-fit">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-bold text-gray-800">Add Shop</h2>
-              <div className="w-8 h-8 rounded-sm bg-blue-50 text-blue-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-sm bg-[#F0F4FA] text-[#35548C] flex items-center justify-center">
                 <PlusCircle size={18} />
               </div>
             </div>
@@ -971,7 +973,7 @@ const Dashboard = () => {
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">Shop Image</label>
                 <input id="shop-image-input" type="file" accept="image/*"
                   onChange={(e) => setShopForm({ ...shopForm, image: e.target.files[0] })}
-                  className="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100" />
+                  className="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#F0F4FA] file:text-[#35548C] hover:file:bg-[#DDE6F2]" />
               </div>
               <button type="submit"
                 className="w-full bg-[#35548C] hover:bg-[#2A4370] text-white py-3 rounded-sm font-bold text-sm transition shadow-sm">
@@ -990,11 +992,11 @@ const Dashboard = () => {
         <section className="bg-[#FBF8EF] rounded-sm border border-[#2B2A25]/10 shadow-sm p-6 mb-6">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-lg font-bold text-gray-800">Add Service</h2>
-            <div className="w-8 h-8 rounded-sm bg-blue-50 text-blue-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-sm bg-[#F0F4FA] text-[#35548C] flex items-center justify-center">
               <Tag size={18} />
             </div>
           </div>
-          <form onSubmit={handleServiceSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <form onSubmit={handleServiceSubmit} className="grid grid-cols-1 md:grid-cols-5 gap-3">
             <select value={serviceForm.shop}
               onChange={(e) => setServiceForm({ ...serviceForm, shop: e.target.value })}
               className={inputClass}>
@@ -1006,14 +1008,23 @@ const Dashboard = () => {
             <input type="text" placeholder="Service Name" value={serviceForm.name}
               onChange={(e) => setServiceForm({ ...serviceForm, name: e.target.value })}
               className={inputClass} />
-            <input type="number" placeholder="Price per kg (KES)" value={serviceForm.price_per_kg}
-              onChange={(e) => setServiceForm({ ...serviceForm, price_per_kg: e.target.value })}
+            <select value={serviceForm.pricing_type}
+              onChange={(e) => setServiceForm({ ...serviceForm, pricing_type: e.target.value })}
+              className={inputClass}>
+              <option value="per_kg">Priced per kg</option>
+              <option value="per_item">Priced per item</option>
+            </select>
+            <input type="number" placeholder={serviceForm.pricing_type === "per_item" ? "Price per item (KES)" : "Price per kg (KES)"} value={serviceForm.price}
+              onChange={(e) => setServiceForm({ ...serviceForm, price: e.target.value })}
               className={inputClass} />
             <button type="submit"
               className="bg-[#35548C] hover:bg-[#2A4370] text-white rounded-sm font-bold text-sm transition py-3 shadow-sm">
               Add Service
             </button>
           </form>
+          <p className="text-xs text-gray-400 mt-2">
+            "Per item" is for things like suits, duvets, or curtains — priced per piece instead of by weight.
+          </p>
           {serviceMessage && (
             <p className={`mt-3 text-xs font-medium ${serviceMessage.includes("success") ? "text-green-600" : "text-red-500"}`}>
               {serviceMessage}
@@ -1042,7 +1053,7 @@ const Dashboard = () => {
                   {!editingProfile && (
                     <button
                       onClick={handleStartEditProfile}
-                      className="flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-800"
+                      className="flex items-center gap-1.5 text-sm font-semibold text-[#35548C] hover:text-[#223655]"
                     >
                       <Edit2 size={14} /> Edit
                     </button>
@@ -1052,28 +1063,28 @@ const Dashboard = () => {
                 {!editingProfile ? (
                   <div className="space-y-4">
                     <div className="flex items-center gap-3 py-2.5 border-b border-gray-50 last:border-0">
-                      <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><User size={15} /></div>
+                      <div className="w-8 h-8 rounded-full bg-[#F0F4FA] text-[#35548C] flex items-center justify-center shrink-0"><User size={15} /></div>
                       <div className="min-w-0">
                         <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide">Username</p>
                         <p className="text-sm font-medium text-gray-800 truncate">{profileData.username}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 py-2.5 border-b border-gray-50 last:border-0">
-                      <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><Mail size={15} /></div>
+                      <div className="w-8 h-8 rounded-full bg-[#F0F4FA] text-[#35548C] flex items-center justify-center shrink-0"><Mail size={15} /></div>
                       <div className="min-w-0">
                         <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide">Email</p>
                         <p className="text-sm font-medium text-gray-800 truncate">{profileData.email}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 py-2.5 border-b border-gray-50 last:border-0">
-                      <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><Phone size={15} /></div>
+                      <div className="w-8 h-8 rounded-full bg-[#F0F4FA] text-[#35548C] flex items-center justify-center shrink-0"><Phone size={15} /></div>
                       <div className="min-w-0">
                         <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide">Phone</p>
                         <p className="text-sm font-medium text-gray-800 truncate">{profileData.phone || "Not set"}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 py-2.5">
-                      <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><MapPin size={15} /></div>
+                      <div className="w-8 h-8 rounded-full bg-[#F0F4FA] text-[#35548C] flex items-center justify-center shrink-0"><MapPin size={15} /></div>
                       <div className="min-w-0">
                         <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide">Shop location</p>
                         <p className="text-sm font-medium text-gray-800 truncate">{profileData.location || "Not set"}</p>
@@ -1135,7 +1146,7 @@ const Dashboard = () => {
               {/* CHANGE PASSWORD */}
               <section className="bg-[#FBF8EF] rounded-sm border border-[#2B2A25]/10 shadow-sm p-6">
                 <div className="flex items-center gap-2 mb-5">
-                  <Lock size={16} className="text-blue-600" />
+                  <Lock size={16} className="text-[#35548C]" />
                   <h2 className="font-bold text-lg text-gray-900">Change password</h2>
                 </div>
 
@@ -1219,7 +1230,7 @@ const Dashboard = () => {
           /* ===========================
              ORDERS VIEW (inline, no navigation)
              =========================== */
-          <section className="bg-[#FBF8EF] rounded-sm border border-[#2B2A25]/10 shadow-sm p-6">
+          <div>
 
             {/* FILTER TABS */}
             <div className="flex flex-wrap gap-2 mb-6">
@@ -1261,7 +1272,7 @@ const Dashboard = () => {
             </div>
 
             {orderFilter === "archived" && loadingArchived ? (
-              <div className="text-center py-16 text-gray-400 text-sm">
+              <div className="text-center py-16 text-gray-400 text-sm border rounded-sm" style={{ background: "#FBF8EF", borderColor: `${TICKET_INK}1F` }}>
                 Loading archived orders...
               </div>
             ) : (() => {
@@ -1273,7 +1284,7 @@ const Dashboard = () => {
 
               if (filteredOrders.length === 0) {
                 return (
-                  <div className="text-center py-16 text-gray-400 text-sm">
+                  <div className="text-center py-16 text-gray-400 text-sm border rounded-sm" style={{ background: "#FBF8EF", borderColor: `${TICKET_INK}1F` }}>
                     <ShoppingCart size={28} className="mx-auto mb-3 text-gray-200" />
                     No orders here
                   </div>
@@ -1285,7 +1296,7 @@ const Dashboard = () => {
                   {filteredOrders.map((order) => (
                     <div
                       key={order.id}
-                      className="relative border rounded-sm"
+                      className="relative border rounded-sm shadow-sm"
                       style={{ background: "#FBF8EF", borderColor: `${TICKET_INK}1F` }}
                     >
                       {/* punch hole — the tag this ticket hangs from */}
@@ -1306,7 +1317,7 @@ const Dashboard = () => {
                             <p className="text-sm font-bold" style={{ color: TICKET_INK }}>{order.user?.username}</p>
                             <p className="text-xs mt-0.5" style={{ color: `${TICKET_INK}99` }}>{order.service?.name} — {order.shop?.name}</p>
                             <p className="text-xs font-bold mt-1" style={{ fontFamily: TICKET_FONT, color: "#35548C" }}>
-                              KES {order.total_price} · {order.weight} kg
+                              KES {order.total_price} · {order.quantity ? `${order.quantity} item${order.quantity === 1 ? "" : "s"}` : `${order.weight} kg`}
                             </p>
                           </div>
                           <div className="flex flex-col items-end gap-1.5 shrink-0">
@@ -1474,7 +1485,7 @@ const Dashboard = () => {
                 </div>
               );
             })()}
-          </section>
+          </div>
         )}
 
       </main>

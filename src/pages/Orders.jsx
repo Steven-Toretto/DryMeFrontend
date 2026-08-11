@@ -4,13 +4,13 @@ import {
   getOrders, getOwnerOrders, getArchivedOrders,
   getArchivedOwnerOrders, updateOrderStatus, archiveOrder,
   initiatePayment, checkPaymentStatus, updateOrderNotes,
-  declineOrder, cancelOrder,
+  declineOrder, cancelOrder, submitReview,
 } from "../api";
 import {
   Phone, MapPin, Archive, Package, Droplets,
   CheckCircle2, RotateCcw, CreditCard,
   Shirt, StickyNote, Pencil, ChevronDown,
-  ThumbsUp, XCircle, AlertTriangle, Ban,
+  ThumbsUp, XCircle, AlertTriangle, Ban, Star,
 } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
 
@@ -105,6 +105,13 @@ function Orders() {
   const [declineError, setDeclineError] = useState("");
 
   const [cancellingId, setCancellingId] = useState(null);
+
+  const [reviewingOrderId, setReviewingOrderId] = useState(null);
+  const [reviewRatingDraft, setReviewRatingDraft] = useState(0);
+  const [reviewHoverRating, setReviewHoverRating] = useState(0);
+  const [reviewCommentDraft, setReviewCommentDraft] = useState("");
+  const [submittingReviewId, setSubmittingReviewId] = useState(null);
+  const [reviewError, setReviewError] = useState("");
 
   // Secondary reference info (customer details, full timeline) is tucked
   // behind a disclosure per card so the ticket isn't shouting everything
@@ -236,6 +243,41 @@ function Orders() {
       alert(err.response?.data?.error || "Couldn't cancel this order. Try again.");
     } finally {
       setCancellingId(null);
+    }
+  };
+
+  const handleStartReview = (order) => {
+    setReviewingOrderId(order.id);
+    setReviewRatingDraft(0);
+    setReviewHoverRating(0);
+    setReviewCommentDraft("");
+    setReviewError("");
+  };
+
+  const handleCancelReview = () => {
+    setReviewingOrderId(null);
+    setReviewRatingDraft(0);
+    setReviewCommentDraft("");
+    setReviewError("");
+  };
+
+  const handleSubmitReview = async (orderId) => {
+    if (!reviewRatingDraft) {
+      setReviewError("Pick a star rating first.");
+      return;
+    }
+    setSubmittingReviewId(orderId);
+    setReviewError("");
+    try {
+      await submitReview(orderId, reviewRatingDraft, reviewCommentDraft.trim());
+      setOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, has_review: true } : o))
+      );
+      setReviewingOrderId(null);
+    } catch (err) {
+      setReviewError(err.response?.data?.error || "Couldn't submit your review. Try again.");
+    } finally {
+      setSubmittingReviewId(null);
     }
   };
 
@@ -464,11 +506,11 @@ function Orders() {
                       {order.shop?.name}
                     </Link>
 
-                    {/* RECEIPT LINES — weight / total, like a printed line item */}
+                    {/* RECEIPT LINES — weight/quantity / total, like a printed line item */}
                     <div className="mt-4 mb-5 text-sm" style={{ fontFamily: TICKET_FONT, color: INK }}>
                       <div className="flex justify-between py-1.5 border-b border-dashed" style={{ borderColor: `${INK}20` }}>
-                        <span style={{ color: `${INK}80` }}>WEIGHT</span>
-                        <span className="font-bold">{order.weight} kg</span>
+                        <span style={{ color: `${INK}80` }}>{order.quantity ? "QUANTITY" : "WEIGHT"}</span>
+                        <span className="font-bold">{order.quantity ? `${order.quantity} item${order.quantity === 1 ? "" : "s"}` : `${order.weight} kg`}</span>
                       </div>
                       <div className="flex justify-between py-1.5">
                         <span style={{ color: `${INK}80` }}>TOTAL</span>
@@ -764,6 +806,157 @@ function Orders() {
                           style={{ background: "#35548C" }}>
                           <RotateCcw size={14} /> Book Again
                         </button>
+                      </div>
+                    )}
+
+                    {/* ⭐ RATE THIS ORDER — customer, completed orders only */}
+                    {role === "customer" && order.status === "completed" && (
+                      <div className="mb-5">
+                        {order.has_review ? (
+                          <div className="flex items-center gap-1.5 text-xs font-medium" style={{ color: "#B5811E" }}>
+                            {[1, 2, 3, 4, 5].map((n) => (
+                              <Star key={n} size={14} fill="#B5811E" style={{ color: "#B5811E" }} />
+                            ))}
+                            <span style={{ color: `${INK}70` }} className="ml-1">You rated this shop</span>
+                          </div>
+                        ) : reviewingOrderId === order.id ? (
+                          <div className="p-4 border rounded-sm" style={{ borderColor: "#B5811E40", background: "#B5811E0D" }}>
+                            <p className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: "#8A6316" }}>
+                              How was this order?
+                            </p>
+                            <div className="flex items-center gap-1 mb-3">
+                              {[1, 2, 3, 4, 5].map((n) => (
+                                <button
+                                  key={n}
+                                  type="button"
+                                  onMouseEnter={() => setReviewHoverRating(n)}
+                                  onMouseLeave={() => setReviewHoverRating(0)}
+                                  onClick={() => setReviewRatingDraft(n)}
+                                  className="p-0.5"
+                                  aria-label={`${n} star${n > 1 ? "s" : ""}`}
+                                >
+                                  <Star
+                                    size={24}
+                                    fill={(reviewHoverRating || reviewRatingDraft) >= n ? "#B5811E" : "none"}
+                                    style={{ color: "#B5811E" }}
+                                  />
+                                </button>
+                              ))}
+                            </div>
+                            <textarea
+                              value={reviewCommentDraft}
+                              onChange={(e) => setReviewCommentDraft(e.target.value)}
+                              maxLength={1000}
+                              rows={2}
+                              placeholder="Anything worth mentioning? (optional)"
+                              className="w-full text-sm border rounded-sm p-3 bg-white focus:outline-none focus:ring-2 resize-none"
+                              style={{ borderColor: "#B5811E40" }}
+                            />
+                            {reviewError && (
+                              <p className="text-xs mt-2" style={{ color: "#9C3B2E" }}>{reviewError}</p>
+                            )}
+                            <div className="flex gap-2 mt-2">
+                              <button
+                                onClick={() => handleSubmitReview(order.id)}
+                                disabled={submittingReviewId === order.id}
+                                className="px-4 py-1.5 text-xs font-bold rounded-sm text-white transition disabled:opacity-50"
+                                style={{ background: "#B5811E" }}
+                              >
+                                {submittingReviewId === order.id ? "Submitting..." : "Submit rating"}
+                              </button>
+                              <button
+                                onClick={handleCancelReview}
+                                disabled={submittingReviewId === order.id}
+                                className="px-3 py-1.5 text-xs font-semibold hover:opacity-70"
+                                style={{ color: `${INK}80` }}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleStartReview(order)}
+                            className="flex items-center gap-1.5 text-xs font-semibold hover:underline"
+                            style={{ color: "#B5811E" }}
+                          >
+                            <Star size={13} /> Rate this order
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* RATE THIS ORDER — customer, completed orders only */}
+                    {role === "customer" && order.status === "completed" && (
+                      <div className="mb-5">
+                        {order.has_review ? (
+                          <div className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: "#B5811E" }}>
+                            <Star size={13} fill="#B5811E" /> You rated this shop
+                          </div>
+                        ) : reviewingOrderId === order.id ? (
+                          <div className="p-4 border rounded-sm" style={{ borderColor: "#B5811E40", background: "#B5811E0D" }}>
+                            <p className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: "#8A6316" }}>
+                              How was it?
+                            </p>
+                            <div className="flex gap-1 mb-3">
+                              {[1, 2, 3, 4, 5].map((n) => (
+                                <button
+                                  key={n}
+                                  type="button"
+                                  onClick={() => setReviewRatingDraft(n)}
+                                  onMouseEnter={() => setReviewHoverRating(n)}
+                                  onMouseLeave={() => setReviewHoverRating(0)}
+                                  className="p-0.5"
+                                  aria-label={`${n} star${n > 1 ? "s" : ""}`}
+                                >
+                                  <Star
+                                    size={22}
+                                    fill={(reviewHoverRating || reviewRatingDraft) >= n ? "#B5811E" : "none"}
+                                    style={{ color: "#B5811E" }}
+                                  />
+                                </button>
+                              ))}
+                            </div>
+                            <textarea
+                              value={reviewCommentDraft}
+                              onChange={(e) => setReviewCommentDraft(e.target.value)}
+                              maxLength={1000}
+                              rows={2}
+                              placeholder="Optional — how was the service, timing, quality of wash?"
+                              className="w-full text-sm border rounded-sm p-3 bg-white focus:outline-none focus:ring-2 resize-none"
+                              style={{ borderColor: "#B5811E40" }}
+                            />
+                            {reviewError && (
+                              <p className="text-xs mt-2" style={{ color: "#9C3B2E" }}>{reviewError}</p>
+                            )}
+                            <div className="flex gap-2 mt-3">
+                              <button
+                                onClick={() => handleSubmitReview(order.id)}
+                                disabled={submittingReviewId === order.id}
+                                className="px-4 py-1.5 text-xs font-bold rounded-sm text-white transition disabled:opacity-50"
+                                style={{ background: "#B5811E" }}
+                              >
+                                {submittingReviewId === order.id ? "Submitting..." : "Submit review"}
+                              </button>
+                              <button
+                                onClick={handleCancelReview}
+                                disabled={submittingReviewId === order.id}
+                                className="px-3 py-1.5 text-xs font-semibold hover:opacity-70"
+                                style={{ color: `${INK}80` }}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleStartReview(order)}
+                            className="flex items-center gap-1.5 text-xs font-semibold hover:underline"
+                            style={{ color: "#B5811E" }}
+                          >
+                            <Star size={13} /> Rate this order
+                          </button>
+                        )}
                       </div>
                     )}
 

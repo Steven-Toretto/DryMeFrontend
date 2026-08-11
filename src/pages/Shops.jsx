@@ -1,7 +1,7 @@
 import { useEffect, useState, useContext } from "react";
 import { getShops, deleteShop } from "../api";
 import { useNavigate, Link } from "react-router-dom";
-import { MapPin, Search, Edit2, Trash2, Store } from "lucide-react";
+import { MapPin, Search, Edit2, Trash2, Store, Star } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
 
 function Shops() {
@@ -56,16 +56,16 @@ function Shops() {
     <div className="min-h-screen bg-gray-50">
 
       {/* HERO BANNER */}
-      <div className="bg-gradient-to-br from-blue-700 via-blue-600 to-blue-500 text-white py-14 px-6 relative overflow-hidden">
+      <div className="bg-gradient-to-br from-[#2A4370] via-[#35548C] to-[#4A6699] text-white py-14 px-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-72 h-72 bg-white/5 rounded-full -translate-y-1/3 translate-x-1/4 pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-56 h-56 bg-white/5 rounded-full translate-y-1/3 -translate-x-1/4 pointer-events-none" />
 
         <div className="max-w-6xl mx-auto relative z-10">
-          <span className="inline-block text-blue-200 text-xs font-bold tracking-widest uppercase mb-3">
+          <span className="inline-block text-[#BBCBE3] text-xs font-bold tracking-widest uppercase mb-3">
             Browse
           </span>
           <h1 className="text-3xl md:text-4xl font-black mb-2">Laundry Shops</h1>
-          <p className="text-blue-100/80 text-sm mb-8 max-w-md">
+          <p className="text-[#DDE6F2]/80 text-sm mb-8 max-w-md">
             Find trusted laundry shops near you — book a pickup in seconds.
           </p>
 
@@ -77,7 +77,7 @@ function Shops() {
               placeholder="Search by shop name or location..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-white text-gray-800 placeholder-gray-400 rounded-xl pl-11 pr-4 py-3.5 text-sm shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+              className="w-full bg-white text-gray-800 placeholder-gray-400 rounded-xl pl-11 pr-4 py-3.5 text-sm shadow-lg focus:outline-none focus:ring-2 focus:ring-[#93A9CE]"
             />
           </div>
         </div>
@@ -99,7 +99,7 @@ function Shops() {
           {search && (
             <button
               onClick={() => setSearch("")}
-              className="text-xs text-blue-600 hover:underline font-medium"
+              className="text-xs text-[#35548C] hover:underline font-medium"
             >
               Clear search
             </button>
@@ -171,7 +171,7 @@ function Shops() {
                     )}
 
                     {/* Badge */}
-                    <span className="absolute top-3 left-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white text-xs px-2.5 py-1 rounded-full font-semibold shadow-sm">
+                    <span className="absolute top-3 left-3 bg-gradient-to-r from-[#35548C] to-[#4A6699] text-white text-xs px-2.5 py-1 rounded-full font-semibold shadow-sm">
                       Featured
                     </span>
 
@@ -183,7 +183,7 @@ function Shops() {
                       >
                         <button
                           onClick={() => navigate(`/edit-shop/${shop.id}`)}
-                          className="bg-white/95 text-blue-600 p-1.5 rounded-lg shadow hover:bg-blue-50 transition"
+                          className="bg-white/95 text-[#35548C] p-1.5 rounded-lg shadow hover:bg-[#F0F4FA] transition"
                         >
                           <Edit2 size={13} />
                         </button>
@@ -204,6 +204,15 @@ function Shops() {
                       <MapPin size={11} className="text-red-400 shrink-0" />
                       {shop.location}
                     </p>
+                    {shop.review_count > 0 ? (
+                      <p className="flex items-center gap-1 text-xs mt-1.5">
+                        <Star size={12} fill="#B5811E" style={{ color: "#B5811E" }} />
+                        <span className="font-semibold text-gray-700">{shop.average_rating}</span>
+                        <span className="text-gray-400">({shop.review_count})</span>
+                      </p>
+                    ) : (
+                      <p className="text-xs text-gray-300 mt-1.5">No reviews yet</p>
+                    )}
                     <p className="text-gray-500 text-sm mt-2 line-clamp-2 flex-1">
                       {shop.description}
                     </p>
@@ -215,7 +224,7 @@ function Shops() {
                           e.stopPropagation();
                           navigate(`/shop/${shop.id}`);
                         }}
-                        className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white py-2.5 rounded-xl font-semibold text-sm transition"
+                        className="flex-1 bg-gradient-to-r from-[#35548C] to-[#4A6699] hover:from-[#2A4370] hover:to-[#35548C] text-white py-2.5 rounded-xl font-semibold text-sm transition"
                       >
                         View
                       </button>
@@ -246,7 +255,7 @@ function Shops() {
             >
               Previous
             </button>
-            <span className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-bold">
+            <span className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#35548C] to-[#4A6699] text-white text-sm font-bold">
               {page} / {totalPages}
             </span>
             <button
@@ -265,4 +274,3 @@ function Shops() {
 }
 
 export default Shops;
-

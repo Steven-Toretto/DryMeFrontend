@@ -1,12 +1,23 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { MapPin, CheckCircle2 } from "lucide-react";
+import { MapPin, CheckCircle2, Star } from "lucide-react";
 import {
   getServices,
   createOrder,
   getShop,
   getProfile,
+  getShopReviews,
 } from "../api";
+
+// Nobody can reliably guess "my laundry weighs 3.5kg" — let people pick
+// a load size they can actually judge by eye instead. Each maps to an
+// estimated kg figure used for the price shown.
+const LOAD_SIZES = [
+  { key: "small", label: "Small", kg: 2, desc: "A few days of clothes for one person" },
+  { key: "medium", label: "Medium", kg: 4, desc: "A full laundry basket" },
+  { key: "large", label: "Large", kg: 6, desc: "Bedding plus a few days of clothes" },
+  { key: "xl", label: "Extra Large", kg: 9, desc: "A duffel bag — multiple loads" },
+];
 
 function ShopDetails() {
 
@@ -28,7 +39,9 @@ function ShopDetails() {
   const [selectedService, setSelectedService] =
     useState(preselectService || "");
 
-  const [weight, setWeight] = useState(preselectWeight ? Number(preselectWeight) : 1);
+  const [weight, setWeight] = useState(preselectWeight ? Number(preselectWeight) : "");
+  const [quantity, setQuantity] = useState(1);
+  const [loadSize, setLoadSize] = useState(""); // which basket-size button is selected
   const [notes, setNotes] = useState("");
   const [phone, setPhone] = useState("");
   const [pickupLocation, setPickupLocation] = useState("");
@@ -106,9 +119,25 @@ function ShopDetails() {
 
     if (id) {
       fetchShopAndServices();
+      fetchReviews();
     }
 
   }, [id]);
+
+  const [reviews, setReviews] = useState([]);
+  const [loadingReviews, setLoadingReviews] = useState(true);
+
+  const fetchReviews = async () => {
+    try {
+      setLoadingReviews(true);
+      const data = await getShopReviews(id);
+      setReviews(data.results ?? data);
+    } catch (err) {
+      console.error("Couldn't load reviews:", err.response?.data || err.message);
+    } finally {
+      setLoadingReviews(false);
+    }
+  };
 
   const fetchShopAndServices = async () => {
 
@@ -143,10 +172,13 @@ function ShopDetails() {
 
         setSelectedService(firstService.id);
 
-        setPrice(
-          Number(firstService.price_per_kg) *
-          Number(weight)
-        );
+        if (firstService.pricing_type === "per_item") {
+          setPrice(Number(firstService.price) * quantity);
+        } else if (weight) {
+          setPrice(Number(firstService.price) * Number(weight));
+        } else {
+          setPrice(0);
+        }
       }
 
     } catch (err) {
@@ -164,6 +196,14 @@ function ShopDetails() {
   };
 
   // ===============================
+  // HELPER — current selected service object
+  // ===============================
+  const getSelectedServiceObj = (idOverride) => {
+    const targetId = idOverride !== undefined ? idOverride : Number(selectedService);
+    return services.find((s) => s.id === targetId);
+  };
+
+  // ===============================
   // HANDLE SERVICE CHANGE
   // ===============================
   const handleServiceChange = (
@@ -175,53 +215,58 @@ function ShopDetails() {
     setSelectedService(parsedId);
 
     setError("");
-
     setSuccess("");
 
-    const service = services.find(
-      (s) => s.id === parsedId
-    );
+    const service = getSelectedServiceObj(parsedId);
 
-    if (service && weight > 0) {
-
-      setPrice(
-        Number(service.price_per_kg) *
-        Number(weight)
-      );
-
-    } else {
-
+    if (!service) {
       setPrice(0);
+      return;
+    }
+
+    // Reset the other type's input so switching services doesn't leave
+    // a stale weight/quantity behind
+    if (service.pricing_type === "per_item") {
+      setWeight("");
+      setLoadSize("");
+      setPrice(Number(service.price) * (quantity || 1));
+    } else {
+      setQuantity(1);
+      if (weight) {
+        setPrice(Number(service.price) * Number(weight));
+      } else {
+        setPrice(0);
+      }
     }
   };
 
   // ===============================
-  // HANDLE WEIGHT CHANGE
+  // HANDLE LOAD SIZE PICK (per-kg services)
   // ===============================
-  const handleWeightChange = (value) => {
-
-    const newWeight = Number(value);
-
-    setWeight(newWeight);
-
+  const handleLoadSizeSelect = (size) => {
+    setLoadSize(size.key);
+    setWeight(size.kg);
     setError("");
-
     setSuccess("");
 
-    const service = services.find(
-      (s) => s.id === Number(selectedService)
-    );
+    const service = getSelectedServiceObj();
+    if (service) {
+      setPrice(Number(service.price) * size.kg);
+    }
+  };
 
-    if (service && newWeight > 0) {
+  // ===============================
+  // HANDLE QUANTITY CHANGE (per-item services)
+  // ===============================
+  const handleQuantityChange = (value) => {
+    const newQty = Math.max(1, Number(value) || 1);
+    setQuantity(newQty);
+    setError("");
+    setSuccess("");
 
-      setPrice(
-        Number(service.price_per_kg) *
-        Number(newWeight)
-      );
-
-    } else {
-
-      setPrice(0);
+    const service = getSelectedServiceObj();
+    if (service) {
+      setPrice(Number(service.price) * newQty);
     }
   };
 
@@ -278,13 +323,19 @@ function ShopDetails() {
       return;
     }
 
-    if (!weight || weight <= 0) {
+    const service = getSelectedServiceObj();
+    const isPerItem = service?.pricing_type === "per_item";
 
-      setError(
-        "Enter a valid weight"
-      );
-
-      return;
+    if (isPerItem) {
+      if (!quantity || quantity < 1) {
+        setError("Enter how many items");
+        return;
+      }
+    } else {
+      if (!weight || weight <= 0) {
+        setError("Choose a load size");
+        return;
+      }
     }
 
     if (!phone.trim()) {
@@ -304,7 +355,9 @@ function ShopDetails() {
       const payload = {
         shop_id: Number(id),
         service_id: Number(selectedService),
-        weight: Number(weight),
+        ...(isPerItem
+          ? { quantity: Number(quantity) }
+          : { weight: Number(weight) }),
         customer_notes: notes.trim() || null,
         customer_phone: phone.trim(),
         customer_location: pickupLocation.trim(),
@@ -321,7 +374,9 @@ function ShopDetails() {
       );
 
       // reset form
-      setWeight(1);
+      setWeight("");
+      setQuantity(1);
+      setLoadSize("");
       setNotes("");
 
       setTimeout(() => {
@@ -411,6 +466,27 @@ function ShopDetails() {
               {shop.name}
             </h1>
 
+            {shop.review_count > 0 ? (
+              <div className="flex items-center gap-1.5 mt-2">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <Star
+                    key={n}
+                    size={16}
+                    fill={n <= Math.round(shop.average_rating) ? "#B5811E" : "none"}
+                    style={{ color: "#B5811E" }}
+                  />
+                ))}
+                <span className="text-sm font-semibold text-gray-700 ml-1">
+                  {shop.average_rating}
+                </span>
+                <span className="text-sm text-gray-400">
+                  ({shop.review_count} {shop.review_count === 1 ? "review" : "reviews"})
+                </span>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400 mt-2">No reviews yet</p>
+            )}
+
             <p className="text-gray-500 mt-2">
               {shop.location}
             </p>
@@ -427,7 +503,7 @@ function ShopDetails() {
         <div className="max-w-lg mx-auto bg-white rounded-3xl shadow-xl overflow-hidden">
 
           {/* HEADER */}
-          <div className="px-6 py-5 bg-gradient-to-r from-blue-600 to-indigo-600">
+          <div className="px-6 py-5 bg-gradient-to-r from-[#35548C] to-[#2A4370]">
 
             <h2 className="text-xl md:text-2xl font-extrabold text-white text-center">
               Book Laundry Service
@@ -470,7 +546,7 @@ function ShopDetails() {
                   e.target.value
                 )
               }
-              className="w-full mb-4 rounded-xl border border-gray-200 px-3 py-3 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
+              className="w-full mb-4 rounded-xl border border-gray-200 px-3 py-3 text-sm focus:ring-2 focus:ring-[#93A9CE] outline-none"
             >
 
               <option value="">
@@ -484,32 +560,82 @@ function ShopDetails() {
                   value={s.id}
                 >
                   {s.name} — KES{" "}
-                  {formatPrice(
-                    s.price_per_kg
-                  )}
-                  /kg
+                  {formatPrice(s.price)}
+                  {s.pricing_type === "per_item" ? "/item" : "/kg"}
                 </option>
 
               ))}
 
             </select>
 
-            {/* WEIGHT */}
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Weight (kg)
-            </label>
+            {/* WEIGHT (per-kg services) or QUANTITY (per-item services) */}
+            {(() => {
+              const service = getSelectedServiceObj();
+              const isPerItem = service?.pricing_type === "per_item";
 
-            <input
-              type="number"
-              value={weight}
-              min={1}
-              onChange={(e) =>
-                handleWeightChange(
-                  e.target.value
-                )
+              if (!service) return null;
+
+              if (isPerItem) {
+                return (
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      How many {service.name.toLowerCase()}?
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleQuantityChange(quantity - 1)}
+                        className="w-10 h-10 rounded-xl border border-gray-200 text-lg font-bold text-gray-600 hover:bg-gray-50"
+                      >
+                        −
+                      </button>
+                      <input
+                        type="number"
+                        min={1}
+                        value={quantity}
+                        onChange={(e) => handleQuantityChange(e.target.value)}
+                        className="w-16 text-center rounded-xl border border-gray-200 py-2 text-sm outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleQuantityChange(quantity + 1)}
+                        className="w-10 h-10 rounded-xl border border-gray-200 text-lg font-bold text-gray-600 hover:bg-gray-50"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                );
               }
-              className="w-full mb-4 rounded-xl border border-gray-200 px-3 py-3 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
-            />
+
+              return (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    How much laundry?
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {LOAD_SIZES.map((size) => (
+                      <button
+                        key={size.key}
+                        type="button"
+                        onClick={() => handleLoadSizeSelect(size)}
+                        className={`text-left p-3 rounded-xl border-2 transition ${
+                          loadSize === size.key
+                            ? "border-[#4A6699] bg-[#F0F4FA]"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
+                      >
+                        <p className="text-sm font-bold text-gray-800">{size.label}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">~{size.kg}kg · {size.desc}</p>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-2">
+                    Just an estimate — the shop will confirm the exact weight when they collect it.
+                  </p>
+                </div>
+              );
+            })()}
 
             {/* PHONE */}
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -520,7 +646,7 @@ function ShopDetails() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="e.g. 0712 345 678"
-              className="w-full mb-4 rounded-xl border border-gray-200 px-3 py-3 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
+              className="w-full mb-4 rounded-xl border border-gray-200 px-3 py-3 text-sm focus:ring-2 focus:ring-[#93A9CE] outline-none"
             />
 
             {/* PICKUP LOCATION */}
@@ -532,7 +658,7 @@ function ShopDetails() {
                 type="button"
                 onClick={handleUseMyLocation}
                 disabled={locatingGPS}
-                className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                className="flex items-center gap-1 text-xs font-semibold text-[#35548C] hover:text-[#223655] disabled:opacity-50"
               >
                 <MapPin size={13} />
                 {locatingGPS ? "Locating..." : pickupCoords ? "Update pin" : "Use my current location"}
@@ -543,7 +669,7 @@ function ShopDetails() {
               value={pickupLocation}
               onChange={(e) => setPickupLocation(e.target.value)}
               placeholder="e.g. Blue gate opposite Java House, Apt 4B"
-              className="w-full rounded-xl border border-gray-200 px-3 py-3 text-sm focus:ring-2 focus:ring-blue-300 outline-none"
+              className="w-full rounded-xl border border-gray-200 px-3 py-3 text-sm focus:ring-2 focus:ring-[#93A9CE] outline-none"
             />
             <div className="mb-4 mt-1.5">
               {pickupCoords && (
@@ -570,7 +696,7 @@ function ShopDetails() {
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
               placeholder="Gate code, stain alerts, special instructions..."
-              className="w-full mb-4 rounded-xl border border-gray-200 px-3 py-3 text-sm focus:ring-2 focus:ring-blue-300 outline-none resize-none"
+              className="w-full mb-4 rounded-xl border border-gray-200 px-3 py-3 text-sm focus:ring-2 focus:ring-[#93A9CE] outline-none resize-none"
             />
 
             {/* PRICE */}
@@ -592,14 +718,18 @@ function ShopDetails() {
               disabled={
                 loading ||
                 !selectedService ||
-                weight <= 0
+                (getSelectedServiceObj()?.pricing_type === "per_item"
+                  ? !quantity || quantity < 1
+                  : !weight || weight <= 0)
               }
               className={`w-full py-3 rounded-xl text-white font-semibold transition ${
                 loading ||
                 !selectedService ||
-                weight <= 0
+                (getSelectedServiceObj()?.pricing_type === "per_item"
+                  ? !quantity || quantity < 1
+                  : !weight || weight <= 0)
                   ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700 shadow-md"
+                  : "bg-[#35548C] hover:bg-[#2A4370] shadow-md"
               }`}
             >
 
@@ -611,6 +741,47 @@ function ShopDetails() {
 
           </div>
 
+        </div>
+
+        {/* REVIEWS */}
+        <div className="max-w-lg mx-auto mt-8">
+          <h2 className="text-lg font-bold text-gray-800 mb-4">
+            Reviews {shop.review_count > 0 && `(${shop.review_count})`}
+          </h2>
+
+          {loadingReviews ? (
+            <p className="text-sm text-gray-400">Loading reviews...</p>
+          ) : reviews.length === 0 ? (
+            <div className="bg-white rounded-2xl shadow-sm p-6 text-center text-sm text-gray-400">
+              No reviews yet — be the first to book and rate this shop.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {reviews.map((r) => (
+                <div key={r.id} className="bg-white rounded-2xl shadow-sm p-4">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-sm font-semibold text-gray-800">{r.username}</span>
+                    <div className="flex items-center gap-0.5">
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <Star
+                          key={n}
+                          size={13}
+                          fill={n <= r.rating ? "#B5811E" : "none"}
+                          style={{ color: "#B5811E" }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  {r.comment && (
+                    <p className="text-sm text-gray-600">{r.comment}</p>
+                  )}
+                  <p className="text-xs text-gray-400 mt-1.5">
+                    {new Date(r.created_at).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" })}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
       </div>
