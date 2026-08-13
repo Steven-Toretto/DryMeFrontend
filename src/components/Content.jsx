@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Calendar, Droplets, Truck, Smile, MapPin, Star } from "lucide-react";
@@ -73,8 +72,6 @@ function Content() {
 
         </div>
       </section>
-
-      
 
       {/* ── FEATURED SHOPS ── */}
       <section className="py-20 bg-gray-50">
@@ -305,4 +302,3 @@ function Content() {
 }
 
 export default Content;
-

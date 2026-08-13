@@ -2,6 +2,12 @@ import { useState, useEffect, useContext } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { loginUser as loginUserAPI, getOrders } from "../api";
 import { AuthContext } from "../context/AuthContext";
+import { Shirt, Store, AlertTriangle, CheckCircle2 } from "lucide-react";
+
+const PAPER = "#F1EAD8";
+const CARD = "#FBF8EF";
+const INK = "#2B2A25";
+const TICKET_FONT = "'Special Elite', 'Courier New', monospace";
 
 function Login() {
   const navigate = useNavigate();
@@ -72,50 +78,58 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-700 via-blue-600 to-blue-500 flex items-center justify-center px-4 py-12 relative overflow-hidden">
+    <div
+      className="min-h-screen flex items-center justify-center px-4 py-12"
+      style={{
+        background: PAPER,
+        backgroundImage: "radial-gradient(circle at 1px 1px, rgba(0,0,0,0.04) 1px, transparent 0)",
+        backgroundSize: "16px 16px",
+      }}
+    >
+      <div className="w-full max-w-md">
 
-      {/* Background circles */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -translate-y-1/3 translate-x-1/3 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-80 h-80 bg-white/5 rounded-full translate-y-1/3 -translate-x-1/4 pointer-events-none" />
-
-      <div className="w-full max-w-md relative z-10">
-
-        {/* Logo */}
+        {/* BRAND */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-xl mb-3">
-            <span className="text-blue-600 font-black text-2xl">D</span>
+          <div className="w-14 h-14 rounded-full border-2 flex items-center justify-center mb-3" style={{ borderColor: INK, background: CARD }}>
+            <Shirt size={26} style={{ color: INK }} strokeWidth={1.75} />
           </div>
-          <h1 className="text-white font-black text-3xl tracking-tight">DryMe</h1>
-          <p className="text-blue-100/80 text-sm mt-1">Kenya's laundry marketplace</p>
+          <h1 className="font-black text-3xl tracking-tight" style={{ color: INK }}>DryMe</h1>
+          <p className="text-sm mt-1" style={{ fontFamily: TICKET_FONT, color: `${INK}80` }}>Kenya's laundry marketplace</p>
         </div>
 
-        {/* Card */}
+        {/* TICKET CARD */}
         <form
           onSubmit={handleSubmit}
-          className="bg-white rounded-3xl shadow-2xl overflow-hidden"
+          className="relative rounded-sm border overflow-hidden"
+          style={{ background: CARD, borderColor: `${INK}1F`, boxShadow: `0 1px 0 ${INK}0A` }}
         >
+          {/* punch hole */}
+          <div className="absolute -top-2.5 left-8 w-4 h-4 rounded-full border" style={{ background: PAPER, borderColor: `${INK}25` }} />
 
-          {/* Card header */}
-          <div className="px-8 pt-8 pb-6 border-b border-gray-100">
-            <h2 className="text-2xl font-black text-gray-900">Welcome back</h2>
-            <p className="text-gray-500 text-sm mt-1">Sign in to your account</p>
+          {/* HEADER */}
+          <div className="px-8 pt-9 pb-6 border-b border-dashed" style={{ borderColor: `${INK}20` }}>
+            <p className="text-[10px] tracking-[0.25em] mb-1.5" style={{ fontFamily: TICKET_FONT, color: `${INK}66` }}>
+              MEMBER ACCESS
+            </p>
+            <h2 className="text-2xl font-bold" style={{ color: INK }}>Welcome back</h2>
+            <p className="text-sm mt-1" style={{ color: `${INK}80` }}>Sign in to your account</p>
           </div>
 
           <div className="px-8 py-6">
 
             {/* Error */}
             {error && (
-              <div className="mb-5 flex items-start gap-3 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
-                <span className="text-red-500 mt-0.5">⚠</span>
-                <p className="text-red-600 text-sm">{error}</p>
+              <div className="mb-5 flex items-start gap-2.5 p-3.5 border rounded-sm" style={{ borderColor: "#9C3B2E40", background: "#9C3B2E0D" }}>
+                <AlertTriangle size={15} className="mt-0.5 shrink-0" style={{ color: "#9C3B2E" }} />
+                <p className="text-sm" style={{ color: "#9C3B2E" }}>{error}</p>
               </div>
             )}
 
             {/* Success */}
             {success && (
-              <div className="mb-5 flex items-start gap-3 bg-green-50 border border-green-100 rounded-xl px-4 py-3">
-                <span className="text-green-500 mt-0.5">✓</span>
-                <p className="text-green-600 text-sm">{success}</p>
+              <div className="mb-5 flex items-start gap-2.5 p-3.5 border rounded-sm" style={{ borderColor: "#3F6B4740", background: "#3F6B470D" }}>
+                <CheckCircle2 size={15} className="mt-0.5 shrink-0" style={{ color: "#3F6B47" }} />
+                <p className="text-sm" style={{ color: "#3F6B47" }}>{success}</p>
               </div>
             )}
 
@@ -123,7 +137,7 @@ function Login() {
 
               {/* Email */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wide mb-1.5" style={{ fontFamily: TICKET_FONT, color: `${INK}80` }}>
                   Email address
                 </label>
                 <input
@@ -133,19 +147,21 @@ function Login() {
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   required
                   autoComplete="email"
-                  className="w-full border border-gray-200 bg-gray-50 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition"
+                  className="w-full border rounded-sm px-4 py-3 text-sm focus:outline-none focus:ring-2 transition"
+                  style={{ borderColor: `${INK}25`, background: PAPER, color: INK }}
                 />
               </div>
 
               {/* Password */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-sm font-semibold text-gray-700">
+                  <label className="block text-xs font-bold uppercase tracking-wide" style={{ fontFamily: TICKET_FONT, color: `${INK}80` }}>
                     Password
                   </label>
                   <Link
                     to="/forgot-password"
-                    className="text-xs text-blue-500 hover:text-blue-700 transition"
+                    className="text-xs hover:underline transition"
+                    style={{ color: "#35548C" }}
                   >
                     Forgot password?
                   </Link>
@@ -158,12 +174,14 @@ function Login() {
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
                     required
                     autoComplete="current-password"
-                    className="w-full border border-gray-200 bg-gray-50 rounded-xl px-4 py-3 pr-16 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition"
+                    className="w-full border rounded-sm px-4 py-3 pr-16 text-sm focus:outline-none focus:ring-2 transition"
+                    style={{ borderColor: `${INK}25`, background: PAPER, color: INK }}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-blue-500 font-medium transition"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold transition"
+                    style={{ color: "#35548C" }}
                   >
                     {showPassword ? "Hide" : "Show"}
                   </button>
@@ -174,11 +192,8 @@ function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full py-3.5 rounded-xl text-white font-bold text-sm transition shadow-lg ${
-                  loading
-                    ? "bg-blue-400 cursor-not-allowed"
-                    : "bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 shadow-blue-100"
-                }`}
+                className="w-full py-3.5 rounded-sm text-white font-bold text-sm transition disabled:opacity-60"
+                style={{ background: "#35548C" }}
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -197,15 +212,16 @@ function Login() {
 
             {/* Divider */}
             <div className="flex items-center gap-4 my-5">
-              <div className="flex-1 h-px bg-gray-100" />
-              <span className="text-xs text-gray-400">New to DryMe?</span>
-              <div className="flex-1 h-px bg-gray-100" />
+              <div className="flex-1 border-t border-dashed" style={{ borderColor: `${INK}25` }} />
+              <span className="text-xs" style={{ fontFamily: TICKET_FONT, color: `${INK}60` }}>New to DryMe?</span>
+              <div className="flex-1 border-t border-dashed" style={{ borderColor: `${INK}25` }} />
             </div>
 
             {/* Register */}
             <Link
               to="/register"
-              className="w-full flex items-center justify-center py-3 rounded-xl border-2 border-blue-100 text-blue-600 font-semibold text-sm hover:bg-blue-50 transition"
+              className="w-full flex items-center justify-center py-3 rounded-sm border-2 font-bold text-sm transition"
+              style={{ borderColor: "#35548C40", color: "#35548C" }}
             >
               Create an account
             </Link>
@@ -213,22 +229,22 @@ function Login() {
           </div>
 
           {/* Role hints */}
-          <div className="grid grid-cols-2 border-t border-gray-100">
-            <div className="px-6 py-4 text-center border-r border-gray-100">
-              <p className="text-lg mb-1">🏪</p>
-              <p className="text-xs font-semibold text-gray-700">Shop Owner</p>
-              <p className="text-xs text-gray-400 mt-0.5">Manage your business</p>
+          <div className="grid grid-cols-2 border-t border-dashed" style={{ borderColor: `${INK}20` }}>
+            <div className="px-6 py-4 text-center border-r border-dashed" style={{ borderColor: `${INK}20` }}>
+              <Store size={18} className="mx-auto mb-1.5" style={{ color: `${INK}80` }} />
+              <p className="text-xs font-bold" style={{ color: INK }}>Shop Owner</p>
+              <p className="text-xs mt-0.5" style={{ color: `${INK}60` }}>Manage your business</p>
             </div>
             <div className="px-6 py-4 text-center">
-              <p className="text-lg mb-1">👕</p>
-              <p className="text-xs font-semibold text-gray-700">Customer</p>
-              <p className="text-xs text-gray-400 mt-0.5">Book & track laundry</p>
+              <Shirt size={18} className="mx-auto mb-1.5" style={{ color: `${INK}80` }} />
+              <p className="text-xs font-bold" style={{ color: INK }}>Customer</p>
+              <p className="text-xs mt-0.5" style={{ color: `${INK}60` }}>Book & track laundry</p>
             </div>
           </div>
 
         </form>
 
-        <p className="text-center text-blue-100/60 text-xs mt-6">
+        <p className="text-center text-xs mt-6" style={{ fontFamily: TICKET_FONT, color: `${INK}55` }}>
           © 2026 DryMe · Kenya's laundry marketplace
         </p>
 
@@ -238,4 +254,3 @@ function Login() {
 }
 
 export default Login;
-
