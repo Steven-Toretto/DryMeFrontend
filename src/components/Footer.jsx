@@ -1,5 +1,6 @@
 import React from "react";
 import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin } from "react-icons/fa";
+import { Link } from "react-router-dom";
 
 function Footer() {
   return (
@@ -145,12 +146,8 @@ function Footer() {
           <p className="text-sm text-gray-600">© 2026 DryMe. All Rights Reserved</p>
 
           <div className="flex items-center gap-6 text-sm">
-            <a href="/privacy" className="text-gray-600 hover:text-blue-700 transition">
-              Privacy Policy
-            </a>
-            <a href="/terms" className="text-gray-600 hover:text-blue-700 transition">
-              Terms of Service
-            </a>
+            <Link to="/privacy-policy">Privacy Policy</Link>
+<Link to="/terms-and-conditions">Terms &amp; Conditions</Link>
             <span className="hidden md:inline text-gray-400">•</span>
             <span className="text-xs text-gray-500">Built with care for local laundries</span>
           </div>

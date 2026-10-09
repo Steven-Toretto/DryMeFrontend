@@ -29,30 +29,31 @@ function Hero() {
           </div>
 
           <h1 className="text-4xl md:text-6xl font-black text-white leading-[1.1] mb-6">
-            Fresh laundry,
+            Laundry Day is Cancelled.
             <br />
-            <span className="text-blue-100">zero hassle.</span>
+            {/* <span className="text-blue-100">zero hassle.</span> */}
           </h1>
 
           <p className="text-blue-50/90 text-lg max-w-md mx-auto lg:mx-0 mb-8">
-            Book a trusted laundry shop near you, track your order live, and pay
-            instantly with M-Pesa — all from your phone.
+            Find a trusted laundry shop near you, book a pickup in seconds,
+          and get fresh clothes delivered back to your door.
+          No queues. No hassle. Just clean..
           </p>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-10">
             <Link
-              to="/register"
+              to="/shops"
               className="bg-white text-blue-700 font-bold px-8 py-3.5 rounded-xl shadow-xl hover:bg-blue-50 transition text-center"
             >
-              Get Started Free
+              Book a pickup
             </Link>
-            <Link
+            {/* <Link
               to="/shops"
               className="bg-white/10 backdrop-blur border-2 border-white/30 text-white font-semibold px-8 py-3.5 rounded-xl hover:bg-white/20 transition text-center"
             >
               Browse Shops
-            </Link>
+            </Link> */}
           </div>
 
           {/* Feature pills */}

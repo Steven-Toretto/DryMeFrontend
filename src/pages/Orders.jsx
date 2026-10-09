@@ -10,7 +10,7 @@ import {
   Phone, MapPin, Archive, Package, Droplets,
   CheckCircle2, RotateCcw, CreditCard,
   Shirt, StickyNote, Pencil, ChevronDown,
-  ThumbsUp, XCircle, AlertTriangle, Ban, Star,
+  ThumbsUp, XCircle, AlertTriangle, Ban, Star, Navigation,
 } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
 
@@ -63,16 +63,37 @@ function getMapInfo(order) {
     return {
       url: `https://www.google.com/maps?q=${order.pickup_lat},${order.pickup_lng}`,
       label: "Exact pin",
+      directionsUrl: `https://www.google.com/maps/dir/?api=1&destination=${order.pickup_lat},${order.pickup_lng}`,
     };
   }
   if (order.customer_location) {
+    const encoded = encodeURIComponent(order.customer_location);
     return {
-      url: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.customer_location)}`,
+      url: `https://www.google.com/maps/search/?api=1&query=${encoded}`,
       label: "Map",
+      directionsUrl: `https://www.google.com/maps/dir/?api=1&destination=${encoded}`,
     };
   }
   return null;
 }
+
+// // Prefer the exact GPS pin captured at booking over a text search,
+// // which only centers a whole neighborhood.
+// function getMapInfo(order) {
+//   if (order.pickup_lat && order.pickup_lng) {
+//     return {
+//       url: `https://www.google.com/maps?q=${order.pickup_lat},${order.pickup_lng}`,
+//       label: "Exact pin",
+//     };
+//   }
+//   if (order.customer_location) {
+//     return {
+//       url: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.customer_location)}`,
+//       label: "Map",
+//     };
+//   }
+//   return null;
+// }
 
 function getPaymentLabel(ps) {
   switch (ps) {
@@ -886,7 +907,7 @@ function Orders() {
                       </div>
                     )}
 
-                    {/* RATE THIS ORDER — customer, completed orders only */}
+                    {/* RATE THIS ORDER — customer, completed orders only
                     {role === "customer" && order.status === "completed" && (
                       <div className="mb-5">
                         {order.has_review ? (
@@ -958,7 +979,7 @@ function Orders() {
                           </button>
                         )}
                       </div>
-                    )}
+                    )} */}
 
                     {/* CUSTOMER INFO — OWNER ONLY, always visible: this is core
                         info an owner needs on every glance, not secondary reference */}
@@ -1007,6 +1028,18 @@ function Orders() {
                               <MapPin size={12} /> {getMapInfo(order).label}
                             </a>
                           )}
+
+                          {/* HERE */}
+
+                          
+  {getMapInfo(order) && (
+    <a href={getMapInfo(order).directionsUrl}
+      target="_blank" rel="noreferrer"
+      className="flex items-center gap-1.5 text-xs font-semibold hover:underline" style={{ color: "#1C6E8C" }}>
+      <Navigation size={12} /> Directions
+    </a>
+  )}
+                          
                         </div>
                       </div>
                     )}
