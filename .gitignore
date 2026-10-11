@@ -31,5 +31,5 @@ dist-ssr
 *.sw?
 
 # Repomix Outputs
-repomix-output.md
+dryme-frontend-codebase.md
 

@@ -24,8 +24,10 @@ import {
   Image as ImageIcon, Menu, X, TrendingUp,
   CheckCircle2, Clock, Droplets, ThumbsUp, XCircle, Archive, Ban,
   User, Phone, MapPin, Mail, Lock, Check, Settings, AlertTriangle, Shirt, Navigation,
+  Wallet,
 } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
+import WalletView from "../components/WalletView";
 
 // ===========================
 // TICKET PALETTE — matches the claim-ticket styling on the
@@ -671,6 +673,7 @@ const Dashboard = () => {
                 { view: "overview", icon: <Home size={17} />, label: "Dashboard" },
                 { view: "orders", icon: <ShoppingCart size={17} />, label: "Orders", badge: orders.length },
                 { view: "shops", icon: <Store size={17} />, label: "Shops", badge: shops.length },
+                { view: "wallet", icon: <Wallet size={17} />, label: "Wallet" },
                 { view: "profile", icon: <User size={17} />, label: "Profile" },
                 { view: "settings", icon: <Settings size={17} />, label: "Settings" },
               ].map((item) => (
@@ -735,6 +738,8 @@ const Dashboard = () => {
               </>
             ) : activeView === "shops" ? (
               "Shops"
+            ) : activeView === "wallet" ? (
+              "Wallet"
             ) : activeView === "profile" ? (
               "Profile"
             ) : activeView === "settings" ? (
@@ -748,6 +753,8 @@ const Dashboard = () => {
               ? "Here's what's happening with your business today."
               : activeView === "shops"
               ? `${shops.length} ${shops.length === 1 ? "shop" : "shops"} under your account.`
+              : activeView === "wallet"
+              ? "Your earnings, and getting paid."
               : activeView === "profile"
               ? "Manage your account details and password."
               : activeView === "settings"
@@ -797,11 +804,20 @@ const Dashboard = () => {
           ].map((s) => {
             const stamp = getStamp(s.key);
             return (
-              <div key={s.key} className="rounded-sm border p-4 text-center" style={{ background: `${stamp.ink}0D`, borderColor: `${stamp.ink}30` }}>
+              <button
+                type="button"
+                key={s.key}
+                onClick={() => {
+                  setActiveView("orders");
+                  setOrderFilter(s.key);
+                }}
+                className="rounded-sm border p-4 text-center cursor-pointer"
+                style={{ background: `${stamp.ink}0D`, borderColor: `${stamp.ink}30` }}
+              >
                 <div className="flex justify-center mb-2" style={{ color: stamp.ink }}>{s.icon}</div>
                 <p className="text-xs font-bold uppercase tracking-wide" style={{ fontFamily: TICKET_FONT, color: stamp.ink }}>{stamp.label}</p>
                 <p className="text-2xl font-black mt-1" style={{ color: TICKET_INK }}>{s.value}</p>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -1350,6 +1366,10 @@ const Dashboard = () => {
             </section>
           </div>
           </>
+
+        ) : activeView === "wallet" ? (
+
+          <WalletView />
 
         ) : (
 

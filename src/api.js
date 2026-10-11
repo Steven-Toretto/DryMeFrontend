@@ -217,6 +217,34 @@ export const checkPaymentStatus = async (orderId) => {
 };
 
 // ===============================
+// 👛 OWNER WALLET
+// ===============================
+export const getWallet = async () => {
+  const res = await API.get("owner/wallet/");
+  return res.data;
+};
+
+export const getWalletTransactions = async (page = 1) => {
+  const res = await API.get(`owner/wallet/transactions/?page=${page}`);
+  return res.data;
+};
+
+export const getPayouts = async (page = 1) => {
+  const res = await API.get(`owner/payouts/?page=${page}`);
+  return res.data;
+};
+
+export const requestPayout = async ({ amount, method, destination }) => {
+  const res = await API.post("owner/payouts/", { amount, method, destination });
+  return res.data;
+};
+
+export const getPayoutQuote = async (amount, method) => {
+  const res = await API.get("owner/payouts/quote/", { params: { amount, method } });
+  return res.data;
+};
+
+// ===============================
 // 👤 PROFILE
 // ===============================
 export const getProfile = async () => {
