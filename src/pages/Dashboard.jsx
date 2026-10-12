@@ -16,6 +16,7 @@ import {
   getProfile,
   updateProfile,
   changePassword,
+  getWallet,
 } from "../api";
 import { useNavigate } from "react-router-dom";
 import {
@@ -28,6 +29,7 @@ import {
 } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
 import WalletView from "../components/WalletView";
+import { kes } from "../components/walletFormat";
 
 // ===========================
 // TICKET PALETTE — matches the claim-ticket styling on the
@@ -168,6 +170,9 @@ const Dashboard = () => {
   const [editingService, setEditingService] = useState(null);
   const [editServiceMessage, setEditServiceMessage] = useState("");
 
+  // Wallet summary — feeds the Earnings card (same numbers as the Wallet screen)
+  const [walletData, setWalletData] = useState(null);
+
   useEffect(() => {
     if (token === undefined) return;
     if (!token) { navigate("/login"); return; }
@@ -188,10 +193,16 @@ const Dashboard = () => {
     return () => clearInterval(interval);
   }, [token, role]);
 
+  useEffect(() => {
+    if (!token || role !== "owner") return;
+    const interval = setInterval(fetchWallet, 30000);
+    return () => clearInterval(interval);
+  }, [token, role]);
+
   const fetchAll = async () => {
     try {
       setLoading(true);
-      await Promise.all([fetchShops(), fetchOrders()]);
+      await Promise.all([fetchShops(), fetchOrders(), fetchWallet()]);
     } catch (error) {
       console.error("Dashboard fetch error:", error);
     } finally {
@@ -215,6 +226,14 @@ const Dashboard = () => {
       setOrders(data.results ?? data);
     } catch (error) {
       console.error("Fetch orders error:", error);
+    }
+  };
+
+  const fetchWallet = async () => {
+    try {
+      setWalletData(await getWallet());
+    } catch (error) {
+      console.error("Fetch wallet error:", error.response?.data || error.message);
     }
   };
 
@@ -534,6 +553,7 @@ const Dashboard = () => {
     try {
       await updateOrderStatus(id, status);
       fetchOrders();
+      fetchWallet(); // completing a paid order credits the wallet
     } catch (error) {
       console.error("Update error:", error.response?.data || error.message);
     }
@@ -599,8 +619,6 @@ const Dashboard = () => {
   const completedOrders = orders.filter(o => o.status === "completed").length;
   const declinedOrders = orders.filter(o => o.status === "declined").length;
   const cancelledOrders = orders.filter(o => o.status === "cancelled").length;
-  const paidOrders = orders.filter(o => o.payment_status === "paid");
-  const totalRevenue = paidOrders.reduce((sum, o) => sum + parseFloat(o.total_price || 0), 0);
   const uniqueCustomers = new Set(orders.map(o => o.user?.id)).size;
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const thisWeekOrders = orders.filter(o => new Date(o.created_at) >= weekAgo).length;
@@ -770,7 +788,7 @@ const Dashboard = () => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           {[
             { icon: <ShoppingCart size={18} />, ink: "#35548C", label: "Total Orders", value: totalOrders, sub: `${thisWeekOrders} this week`, onClick: () => setActiveView("orders") },
-            { icon: <TrendingUp size={18} />, ink: "#3F6B47", label: "Revenue", value: `KES ${totalRevenue.toFixed(0)}`, sub: `${paidOrders.length} paid orders` },
+            { icon: <TrendingUp size={18} />, ink: "#3F6B47", label: "Earnings", value: walletData ? kes(walletData.lifetime_earned) : "—", sub: walletData ? `${kes(walletData.balance)} available` : "after commission", onClick: () => setActiveView("wallet") },
             { icon: <Users size={18} />, ink: "#8A6D3B", label: "Customers", value: uniqueCustomers, sub: "unique customers" },
             { icon: <Store size={18} />, ink: "#B5811E", label: "My Shops", value: shops.length, sub: "active listings", onClick: () => setActiveView("shops") },
           ].map((stat) => (
