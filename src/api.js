@@ -244,6 +244,12 @@ export const getPayoutQuote = async (amount, method) => {
   return res.data;
 };
 
+export const getOwnerStats = async () => {
+  const res = await API.get("owner/stats/");
+  return res.data;
+};
+
+
 // ===============================
 // 👤 PROFILE
 // ===============================

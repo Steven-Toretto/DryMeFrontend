@@ -17,6 +17,7 @@ import {
   updateProfile,
   changePassword,
   getWallet,
+  getOwnerStats,
 } from "../api";
 import { useNavigate } from "react-router-dom";
 import {
@@ -173,6 +174,9 @@ const Dashboard = () => {
   // Wallet summary — feeds the Earnings card (same numbers as the Wallet screen)
   const [walletData, setWalletData] = useState(null);
 
+  // Overview numbers (totals over ALL orders, computed by the server — the orders list below is paginated)
+  const [statsData, setStatsData] = useState(null);
+
   useEffect(() => {
     if (token === undefined) return;
     if (!token) { navigate("/login"); return; }
@@ -186,6 +190,7 @@ const Dashboard = () => {
       try {
         const updatedOrders = await getOwnerOrders();
         setOrders(updatedOrders.results ?? updatedOrders);
+        fetchStats();
       } catch (error) {
         console.error("Auto refresh failed:", error);
       }
@@ -202,7 +207,7 @@ const Dashboard = () => {
   const fetchAll = async () => {
     try {
       setLoading(true);
-      await Promise.all([fetchShops(), fetchOrders(), fetchWallet()]);
+      await Promise.all([fetchShops(), fetchOrders(), fetchWallet(), fetchStats()]);
     } catch (error) {
       console.error("Dashboard fetch error:", error);
     } finally {
@@ -234,6 +239,14 @@ const Dashboard = () => {
       setWalletData(await getWallet());
     } catch (error) {
       console.error("Fetch wallet error:", error.response?.data || error.message);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      setStatsData(await getOwnerStats());
+    } catch (error) {
+      console.error("Fetch stats error:", error.response?.data || error.message);
     }
   };
 
@@ -554,6 +567,7 @@ const Dashboard = () => {
       await updateOrderStatus(id, status);
       fetchOrders();
       fetchWallet(); // completing a paid order credits the wallet
+      fetchStats();
     } catch (error) {
       console.error("Update error:", error.response?.data || error.message);
     }
@@ -612,16 +626,17 @@ const Dashboard = () => {
   }
 
   // Analytics
-  const totalOrders = orders.length;
   const pendingOrders = orders.filter(o => o.status === "pending").length;
   const confirmedOrders = orders.filter(o => o.status === "confirmed").length;
   const washingOrders = orders.filter(o => o.status === "washing").length;
   const completedOrders = orders.filter(o => o.status === "completed").length;
   const declinedOrders = orders.filter(o => o.status === "declined").length;
   const cancelledOrders = orders.filter(o => o.status === "cancelled").length;
-  const uniqueCustomers = new Set(orders.map(o => o.user?.id)).size;
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  const thisWeekOrders = orders.filter(o => new Date(o.created_at) >= weekAgo).length;
+
+  // Overview tiles: server totals, "—" until they arrive
+  const overview = statsData || {};
+  const statusCounts = overview.status_counts || {};
+  const fmt = (n) => (statsData ? (n ?? 0) : "—");
 
   const inputClass = "w-full border border-gray-200 bg-gray-50 rounded-sm px-4 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4A6699] focus:border-transparent focus:bg-white transition";
 
@@ -787,10 +802,10 @@ const Dashboard = () => {
         {/* ANALYTICS — TOP ROW */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           {[
-            { icon: <ShoppingCart size={18} />, ink: "#35548C", label: "Total Orders", value: totalOrders, sub: `${thisWeekOrders} this week`, onClick: () => setActiveView("orders") },
+            { icon: <ShoppingCart size={18} />, ink: "#35548C", label: "Total Orders", value: fmt(overview.total_orders), sub: `${fmt(overview.orders_this_week)} this week`, onClick: () => setActiveView("orders") },
             { icon: <TrendingUp size={18} />, ink: "#3F6B47", label: "Earnings", value: walletData ? kes(walletData.lifetime_earned) : "—", sub: walletData ? `${kes(walletData.balance)} available` : "after commission", onClick: () => setActiveView("wallet") },
-            { icon: <Users size={18} />, ink: "#8A6D3B", label: "Customers", value: uniqueCustomers, sub: "unique customers" },
-            { icon: <Store size={18} />, ink: "#B5811E", label: "My Shops", value: shops.length, sub: "active listings", onClick: () => setActiveView("shops") },
+            { icon: <Users size={18} />, ink: "#8A6D3B", label: "Customers", value: fmt(overview.unique_customers), sub: "unique customers" },
+            { icon: <Store size={18} />, ink: "#B5811E", label: "My Shops", value: statsData ? overview.shops_count : shops.length, sub: "active listings", onClick: () => setActiveView("shops") },
           ].map((stat) => (
             <div
               key={stat.label}
@@ -813,12 +828,12 @@ const Dashboard = () => {
         {/* STATUS BREAKDOWN */}
         <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
           {[
-            { key: "pending", icon: <Clock size={18} />, value: pendingOrders },
-            { key: "confirmed", icon: <ThumbsUp size={18} />, value: confirmedOrders },
-            { key: "washing", icon: <Droplets size={18} />, value: washingOrders },
-            { key: "completed", icon: <CheckCircle2 size={18} />, value: completedOrders },
-            { key: "declined", icon: <XCircle size={18} />, value: declinedOrders },
-            { key: "cancelled", icon: <Ban size={18} />, value: cancelledOrders },
+            { key: "pending", icon: <Clock size={18} />, value: fmt(statusCounts.pending) },
+            { key: "confirmed", icon: <ThumbsUp size={18} />, value: fmt(statusCounts.confirmed) },
+            { key: "washing", icon: <Droplets size={18} />, value: fmt(statusCounts.washing) },
+            { key: "completed", icon: <CheckCircle2 size={18} />, value: fmt(statusCounts.completed) },
+            { key: "declined", icon: <XCircle size={18} />, value: fmt(statusCounts.declined) },
+            { key: "cancelled", icon: <Ban size={18} />, value: fmt(statusCounts.cancelled) },
           ].map((s) => {
             const stamp = getStamp(s.key);
             return (
