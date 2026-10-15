@@ -145,8 +145,10 @@ export const getOrders = async (page = 1) => {
   return res.data;
 };
 
-export const getOwnerOrders = async (page = 1) => {
-  const res = await API.get(`owner/orders/?page=${page}`);
+// status is optional ("pending", "completed", …): the server filters BEFORE it paginates, so an old
+// pending order can't be pushed off page 1 by newer completed ones.
+export const getOwnerOrders = async (page = 1, status = null) => {
+  const res = await API.get("owner/orders/", { params: status ? { page, status } : { page } });
   return res.data;
 };
 
@@ -244,11 +246,31 @@ export const getPayoutQuote = async (amount, method) => {
   return res.data;
 };
 
+// ===============================
+// 📊 OWNER STATS
+// ===============================
 export const getOwnerStats = async () => {
   const res = await API.get("owner/stats/");
   return res.data;
 };
 
+// ===============================
+// 🔔 NOTIFICATIONS
+// ===============================
+export const getNotifications = async (page = 1) => {
+  const res = await API.get(`notifications/?page=${page}`);
+  return res.data;
+};
+
+export const getUnreadCount = async () => {
+  const res = await API.get("notifications/unread-count/");
+  return res.data;
+};
+
+export const markNotificationsRead = async () => {
+  const res = await API.put("notifications/mark-read/");
+  return res.data;
+};
 
 // ===============================
 // 👤 PROFILE
@@ -272,4 +294,3 @@ export const changePassword = async (oldPassword, newPassword) => {
 };
 
 export default API;
-

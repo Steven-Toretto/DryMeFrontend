@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import {
   createShop,
   getShops,
@@ -19,7 +19,7 @@ import {
   getWallet,
   getOwnerStats,
 } from "../api";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Home, ShoppingCart, Store, PlusCircle,
   Trash2, Edit2, Users, LogOut, Tag,
@@ -30,7 +30,8 @@ import {
 } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
 import WalletView from "../components/WalletView";
-import { kes } from "../components/walletFormat";
+import { kes, dedupeById } from "../components/walletFormat";
+import NotificationBell from "../components/NotificationBell";
 
 // ===========================
 // TICKET PALETTE — matches the claim-ticket styling on the
@@ -112,6 +113,7 @@ function StatusStamp({ status, rotate = -4 }) {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { logoutUser, token, user, updateUser } = useContext(AuthContext);
   const role = user?.role;
 
@@ -125,11 +127,15 @@ const Dashboard = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeView, setActiveView] = useState("overview");
+  const [activeView, setActiveView] = useState(location.state?.view || "overview");
   const [orderFilter, setOrderFilter] = useState("all");
-  const [archivedOrders, setArchivedOrders] = useState([]);
-  const [loadingArchived, setLoadingArchived] = useState(false);
-  const [archivedLoaded, setArchivedLoaded] = useState(false);
+
+  // The Orders tab: ONE list, one page at a time, for whichever filter is selected. The server filters by
+  // status BEFORE it paginates, so an old pending order can't be pushed off the first page by newer ones.
+  const [orderList, setOrderList] = useState({
+    items: [], page: 1, hasMore: false, loading: true, loadingMore: false, error: "",
+  });
+  const listRequest = useRef(0); // lets a slow response for a filter the owner already left be ignored
 
   const [profileData, setProfileData] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
@@ -204,6 +210,19 @@ const Dashboard = () => {
     return () => clearInterval(interval);
   }, [token, role]);
 
+  // Opening the Orders tab (or picking another filter) loads page 1 of that filter.
+  useEffect(() => {
+    if (!token || role !== "owner" || activeView !== "orders") return;
+    loadOrderList(orderFilter);
+  }, [token, role, activeView, orderFilter]);
+
+  // While it's open, new orders show up on their own (merged into what's already loaded).
+  useEffect(() => {
+    if (!token || role !== "owner" || activeView !== "orders" || orderFilter === "archived") return;
+    const interval = setInterval(() => refreshOrderList(orderFilter), 5000);
+    return () => clearInterval(interval);
+  }, [token, role, activeView, orderFilter]);
+
   const fetchAll = async () => {
     try {
       setLoading(true);
@@ -250,16 +269,71 @@ const Dashboard = () => {
     }
   };
 
-  const fetchArchivedOrders = async () => {
-    setLoadingArchived(true);
+  const fetchOrderPage = (filter, page) =>
+    filter === "archived"
+      ? getArchivedOwnerOrders(page)
+      : getOwnerOrders(page, filter === "all" ? null : filter);
+
+  // Load page 1 of a filter. silent = keep showing the current rows until the new ones arrive.
+  const loadOrderList = async (filter, { silent = false } = {}) => {
+    const request = ++listRequest.current;
+    if (!silent) {
+      setOrderList({ items: [], page: 1, hasMore: false, loading: true, loadingMore: false, error: "" });
+    }
     try {
-      const data = await getArchivedOwnerOrders();
-      setArchivedOrders(data.results ?? data);
-      setArchivedLoaded(true);
+      const data = await fetchOrderPage(filter, 1);
+      if (request !== listRequest.current) return;
+      setOrderList({
+        items: data.results ?? data, page: 1, hasMore: Boolean(data.next), loading: false, loadingMore: false, error: "",
+      });
     } catch (error) {
-      console.error("Fetch archived orders error:", error);
-    } finally {
-      setLoadingArchived(false);
+      if (request !== listRequest.current) return;
+      console.error("Fetch orders error:", error.response?.data || error.message);
+      setOrderList((l) => ({ ...l, loading: false, error: silent ? l.error : "Couldn't load these orders." }));
+    }
+  };
+
+  // Poll tick: refresh page 1 and merge it in, keeping any extra pages the owner has already loaded.
+  const refreshOrderList = async (filter) => {
+    const request = listRequest.current;
+    try {
+      const data = await fetchOrderPage(filter, 1);
+      if (request !== listRequest.current) return;
+      const fresh = data.results ?? data;
+      setOrderList((l) => {
+        const freshIds = new Set(fresh.map((o) => o.id));
+        const older = l.items.filter(
+          (o) => !freshIds.has(o.id) && (filter === "all" || filter === "archived" || o.status === filter),
+        );
+        return {
+          ...l,
+          items: [...fresh, ...older],
+          hasMore: l.page === 1 ? Boolean(data.next) : l.hasMore,
+          loading: false,
+          error: "",
+        };
+      });
+    } catch {
+      // keep what's on screen; the next tick will try again
+    }
+  };
+
+  const loadMoreOrders = async () => {
+    const request = listRequest.current;
+    setOrderList((l) => ({ ...l, loadingMore: true }));
+    try {
+      const data = await fetchOrderPage(orderFilter, orderList.page + 1);
+      if (request !== listRequest.current) return;
+      setOrderList((l) => ({
+        ...l,
+        items: dedupeById([...l.items, ...(data.results ?? data)]),
+        page: l.page + 1,
+        hasMore: Boolean(data.next),
+        loadingMore: false,
+      }));
+    } catch (error) {
+      console.error("Load more orders failed:", error.response?.data || error.message);
+      setOrderList((l) => ({ ...l, loadingMore: false }));
     }
   };
 
@@ -568,6 +642,7 @@ const Dashboard = () => {
       fetchOrders();
       fetchWallet(); // completing a paid order credits the wallet
       fetchStats();
+      loadOrderList(orderFilter, { silent: true });
     } catch (error) {
       console.error("Update error:", error.response?.data || error.message);
     }
@@ -578,7 +653,9 @@ const Dashboard = () => {
     try {
       await archiveOrder(id);
       setOrders((prev) => prev.filter((o) => o.id !== id));
-      setArchivedLoaded(false);
+      setOrderList((l) => ({ ...l, items: l.items.filter((o) => o.id !== id) }));
+      fetchStats();
+      loadOrderList(orderFilter, { silent: true });
     } catch (err) {
       console.error("Archive error:", err.response?.data || err.message);
       alert(err.response?.data?.error || "Couldn't archive this order. Try again.");
@@ -610,11 +687,18 @@ const Dashboard = () => {
       setDecliningOrderId(null);
       setDeclineReasonDraft("");
       fetchOrders();
+      fetchStats();
+      loadOrderList(orderFilter, { silent: true });
     } catch (err) {
       setDeclineError(err.response?.data?.error || "Couldn't decline this order. Try again.");
     } finally {
       setDecliningSubmitId(null);
     }
+  };
+
+  // Tapping a notification: owners land on the matching dashboard view (money -> Wallet, otherwise Orders).
+  const handleNotificationSelect = (_notification, target) => {
+    if (target.kind === "view") setActiveView(target.view);
   };
 
   if (!token || loading) {
@@ -626,17 +710,15 @@ const Dashboard = () => {
   }
 
   // Analytics
-  const pendingOrders = orders.filter(o => o.status === "pending").length;
-  const confirmedOrders = orders.filter(o => o.status === "confirmed").length;
-  const washingOrders = orders.filter(o => o.status === "washing").length;
-  const completedOrders = orders.filter(o => o.status === "completed").length;
-  const declinedOrders = orders.filter(o => o.status === "declined").length;
-  const cancelledOrders = orders.filter(o => o.status === "cancelled").length;
 
   // Overview tiles: server totals, "—" until they arrive
   const overview = statsData || {};
   const statusCounts = overview.status_counts || {};
   const fmt = (n) => (statsData ? (n ?? 0) : "—");
+  // Orders tab: what it can list (not archived), so chips always agree with the list under them
+  const listedCounts = overview.listed_counts || {};
+  const chip = (n) => (statsData ? (n ?? 0) : null);
+  const listedTotal = statsData ? overview.listed_total : orders.length;
 
   const inputClass = "w-full border border-gray-200 bg-gray-50 rounded-sm px-4 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4A6699] focus:border-transparent focus:bg-white transition";
 
@@ -651,9 +733,12 @@ const Dashboard = () => {
           </div>
           <span className="font-bold" style={{ fontFamily: TICKET_FONT }}>DryMe</span>
         </div>
-        <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-sm hover:bg-white/10">
-          <Menu size={22} />
-        </button>
+        <div className="flex items-center gap-1">
+          <NotificationBell tone="dark" onSelect={handleNotificationSelect} />
+          <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-sm hover:bg-white/10">
+            <Menu size={22} />
+          </button>
+        </div>
       </div>
 
       {/* MOBILE OVERLAY */}
@@ -704,7 +789,7 @@ const Dashboard = () => {
             <ul className="space-y-1">
               {[
                 { view: "overview", icon: <Home size={17} />, label: "Dashboard" },
-                { view: "orders", icon: <ShoppingCart size={17} />, label: "Orders", badge: orders.length },
+                { view: "orders", icon: <ShoppingCart size={17} />, label: "Orders", badge: listedTotal },
                 { view: "shops", icon: <Store size={17} />, label: "Shops", badge: shops.length },
                 { view: "wallet", icon: <Wallet size={17} />, label: "Wallet" },
                 { view: "profile", icon: <User size={17} />, label: "Profile" },
@@ -757,7 +842,10 @@ const Dashboard = () => {
       <main className="flex-1 md:ml-64 pt-16 md:pt-0 p-5 md:p-8">
 
         {/* HEADER */}
-        <div className="mb-8">
+        <div className="mb-8 relative">
+          <div className="hidden md:block absolute top-0 right-0">
+            <NotificationBell onSelect={handleNotificationSelect} />
+          </div>
           <p className="text-[11px] tracking-[0.3em] mb-1.5" style={{ fontFamily: TICKET_FONT, color: `${TICKET_INK}66` }}>
             COUNTER · BUSINESS
           </p>
@@ -792,7 +880,7 @@ const Dashboard = () => {
               ? "Manage your account details and password."
               : activeView === "settings"
               ? "Manage sensitive, irreversible account actions."
-              : `${orders.length} ${orders.length === 1 ? "order" : "orders"} across your shops.`}
+              : `${listedTotal} ${listedTotal === 1 ? "order" : "orders"} across your shops.`}
           </p>
         </div>
 
@@ -1414,23 +1502,18 @@ const Dashboard = () => {
             {/* FILTER TABS */}
             <div className="flex flex-wrap gap-2 mb-6">
               {[
-                { key: "all", label: "All", count: orders.length },
-                { key: "pending", label: "Pending", count: pendingOrders },
-                { key: "confirmed", label: "Confirmed", count: confirmedOrders },
-                { key: "washing", label: "Washing", count: washingOrders },
-                { key: "completed", label: "Completed", count: completedOrders },
-                { key: "declined", label: "Declined", count: declinedOrders },
-                { key: "cancelled", label: "Cancelled", count: cancelledOrders },
-                { key: "archived", label: "Archived", count: archivedLoaded ? archivedOrders.length : null },
+                { key: "all", label: "All", count: chip(overview.listed_total) },
+                { key: "pending", label: "Pending", count: chip(listedCounts.pending) },
+                { key: "confirmed", label: "Confirmed", count: chip(listedCounts.confirmed) },
+                { key: "washing", label: "Washing", count: chip(listedCounts.washing) },
+                { key: "completed", label: "Completed", count: chip(listedCounts.completed) },
+                { key: "declined", label: "Declined", count: chip(listedCounts.declined) },
+                { key: "cancelled", label: "Cancelled", count: chip(listedCounts.cancelled) },
+                { key: "archived", label: "Archived", count: chip(overview.archived_count) },
               ].map((f) => (
                 <button
                   key={f.key}
-                  onClick={() => {
-                    setOrderFilter(f.key);
-                    if (f.key === "archived" && !archivedLoaded) {
-                      fetchArchivedOrders();
-                    }
-                  }}
+                  onClick={() => setOrderFilter(f.key)}
                   className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition ${
                     orderFilter === f.key
                       ? "text-white"
@@ -1450,16 +1533,23 @@ const Dashboard = () => {
               ))}
             </div>
 
-            {orderFilter === "archived" && loadingArchived ? (
+            {orderList.loading ? (
               <div className="text-center py-16 text-gray-400 text-sm border rounded-sm" style={{ background: "#FBF8EF", borderColor: `${TICKET_INK}1F` }}>
-                Loading archived orders...
+                Loading orders...
+              </div>
+            ) : orderList.error ? (
+              <div className="text-center py-16 text-sm border rounded-sm" style={{ background: "#FBF8EF", borderColor: `${TICKET_INK}1F` }}>
+                <p style={{ color: "#9C3B2E" }}>{orderList.error}</p>
+                <button
+                  onClick={() => loadOrderList(orderFilter)}
+                  className="mt-3 px-5 py-2.5 rounded-sm text-white text-xs font-bold"
+                  style={{ background: "#35548C" }}
+                >
+                  Try again
+                </button>
               </div>
             ) : (() => {
-              const filteredOrders = orderFilter === "all"
-                ? orders
-                : orderFilter === "archived"
-                ? archivedOrders
-                : orders.filter((o) => o.status === orderFilter);
+              const filteredOrders = orderList.items;
 
               if (filteredOrders.length === 0) {
                 return (
@@ -1471,6 +1561,7 @@ const Dashboard = () => {
               }
 
               return (
+                <>
                 <div className="space-y-4">
                   {filteredOrders.map((order) => (
                     <div
@@ -1672,6 +1763,19 @@ const Dashboard = () => {
                     </div>
                   ))}
                 </div>
+
+                {orderList.hasMore && (
+                  <button
+                    type="button"
+                    onClick={loadMoreOrders}
+                    disabled={orderList.loadingMore}
+                    className="w-full mt-4 min-h-[48px] rounded-sm border-2 text-sm font-bold disabled:opacity-60"
+                    style={{ borderColor: "#35548C40", color: "#35548C" }}
+                  >
+                    {orderList.loadingMore ? "Loading..." : "Load more orders"}
+                  </button>
+                )}
+                </>
               );
             })()}
           </div>
