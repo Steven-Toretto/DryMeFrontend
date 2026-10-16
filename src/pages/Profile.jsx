@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 function Profile() {
-  const { user, updateUser } = useContext(AuthContext);
+  const { updateUser } = useContext(AuthContext);
 
   const [profile, setProfile] = useState(null);
   const [stats, setStats] = useState(null);
@@ -237,7 +237,7 @@ function Profile() {
             <StatCard icon={<ShoppingBag size={16} />} label="Total orders" value={stats.total_orders} color="blue" />
             <StatCard icon={<Clock size={16} />} label="Active" value={stats.active_orders} color="amber" />
             <StatCard icon={<CheckCircle2 size={16} />} label="Completed" value={stats.completed_orders} color="emerald" />
-            <StatCard icon={<Wallet size={16} />} label="Total spent" value={`KES ${stats.total_spent}`} color="indigo" />
+            <StatCard icon={<Wallet size={16} />} label="Total spent" value={kes(stats.total_spent)} color="indigo" />
           </div>
         )}
 
@@ -429,4 +429,5 @@ function Field({ label, hint, children }) {
 }
 
 export default Profile;
+
 
