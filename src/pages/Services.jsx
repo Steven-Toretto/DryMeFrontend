@@ -1,182 +1,174 @@
-import laundryImg from "../assets/images/img2.jpg";
-import dryCleaningImg from "../assets/images/img.jpg";
-import ironingImg from "../assets/images/carousel-2.jpg";
-import ironingImg2 from "../assets/images/carousel-1.jpg";
+import { Link } from "react-router-dom";
+import { BedDouble, Droplets, Shirt, Zap } from "lucide-react";
+import { PageHeader, Pill, btn, card, wrap } from "../components/ui";
 
-export default function Services() {
+// No prices here on purpose: every laundry sets its own, and they're shown on the shop's page.
+const SERVICES = [
+  {
+    icon: Droplets,
+    name: "Wash & fold",
+    priced: "By the kilo",
+    text: "Everyday clothes, bedding and towels, washed, dried and folded. The usual way to send a basket of laundry.",
+  },
+  {
+    icon: Shirt,
+    name: "Dry cleaning",
+    priced: "By the item",
+    text: "Suits, dresses, coats and delicate fabrics that shouldn't go in a normal wash.",
+  },
+  {
+    icon: Zap,
+    name: "Ironing",
+    priced: "By the item",
+    text: "Shirts, trousers and work clothes pressed and returned ready to wear.",
+  },
+  {
+    icon: BedDouble,
+    name: "Duvets, curtains & bulky items",
+    priced: "By the item",
+    text: "The things that don't fit in a machine at home. Not every laundry takes these, so check the shop page.",
+  },
+];
+
+const NOTES = [
+  ["Prices", "Every laundry sets its own. Open a shop to see what it charges, by the kilo or by the item."],
+  ["Weight", "When you book by weight you pick a load size. It's an estimate. The shop weighs your laundry when it collects, and you pay the final price."],
+  ["Paying", "You pay with M-Pesa from My Orders. For laundry sold by weight, that's once the shop has weighed it. If the final price is well above your estimate, you approve it first."],
+];
+
+function Services() {
   return (
-    <section className="py-20 bg-gray-50">
-      <div className="max-w-7xl mx-auto px-6">
-        <header className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
-            Shops' Services
-          </h2>
-          <p className="mt-3 text-gray-600 max-w-2xl mx-auto">
-            Professional laundry, dry-cleaning, ironing and packaging services from trusted local shops.
-            Transparent pricing, eco-friendly options and fast delivery.
-          </p>
-        </header>
+    <div>
+      <PageHeader title="Services">
+        <p className="text-lg text-slate-600 mt-3 max-w-xl">
+          Most laundries on DryMe offer the same few things. Which ones, and at what price, depends on the shop.
+        </p>
+      </PageHeader>
 
-        {/* Services grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          <div className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition overflow-hidden flex flex-col">
-            <div className="relative h-48">
-              <img
-                src={laundryImg}
-                alt="Laundry"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute left-4 top-4 bg-white/90 text-xs text-gray-700 px-3 py-1 rounded-full font-semibold">
-                Popular
+      <div className={`${wrap} py-10 sm:py-14`}>
+        <div className="grid gap-5 sm:grid-cols-2">
+          {SERVICES.map(({ icon: Icon, name, priced, text }) => (
+            <div key={name} className={`${card} p-6 sm:p-7 flex gap-5`}>
+              <span className="flex items-center justify-center w-12 h-12 rounded-xl bg-blue-50 text-blue-600 shrink-0">
+                <Icon size={24} />
+              </span>
+              <div>
+                <h2 className="text-lg font-extrabold text-slate-900">{name}</h2>
+                <p className="text-slate-600 mt-1.5 leading-relaxed">{text}</p>
+                <div className="mt-3"><Pill>{priced}</Pill></div>
               </div>
             </div>
-
-            <div className="p-5 flex-1 flex flex-col">
-              <h3 className="font-bold text-lg text-gray-900 mb-2">Laundry</h3>
-              <p className="text-sm text-gray-500 mb-4 flex-1">
-                Wash, dry and fold service with eco-friendly detergents and gentle cycles for all fabrics.
-              </p>
-
-              <div className="flex items-center justify-between mt-4">
-                <div>
-                  <div className="text-sm text-gray-500">From</div>
-                  <div className="text-lg font-bold text-gray-900">KES 120 / kg</div>
-                </div>
-
-                <a
-                  href="/shops"
-                  className="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition"
-                >
-                  View Shops
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition overflow-hidden flex flex-col">
-            <div className="relative h-48">
-              <img
-                src={dryCleaningImg}
-                alt="Dry Cleaning"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute left-4 top-4 bg-white/90 text-xs text-gray-700 px-3 py-1 rounded-full font-semibold">
-                Premium
-              </div>
-            </div>
-
-            <div className="p-5 flex-1 flex flex-col">
-              <h3 className="font-bold text-lg text-gray-900 mb-2">Dry Cleaning</h3>
-              <p className="text-sm text-gray-500 mb-4 flex-1">
-                Professional dry-cleaning for delicate and specialty fabrics — stain treatment included.
-              </p>
-
-              <div className="flex items-center justify-between mt-4">
-                <div>
-                  <div className="text-sm text-gray-500">From</div>
-                  <div className="text-lg font-bold text-gray-900">KES 250 / item</div>
-                </div>
-
-                <a
-                  href="/shops"
-                  className="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition"
-                >
-                  View Shops
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition overflow-hidden flex flex-col">
-            <div className="relative h-48">
-              <img
-                src={ironingImg}
-                alt="Ironing"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute left-4 top-4 bg-white/90 text-xs text-gray-700 px-3 py-1 rounded-full font-semibold">
-                Quick
-              </div>
-            </div>
-
-            <div className="p-5 flex-1 flex flex-col">
-              <h3 className="font-bold text-lg text-gray-900 mb-2">Ironing</h3>
-              <p className="text-sm text-gray-500 mb-4 flex-1">
-                Fast and precise ironing to keep your shirts and garments crisp and ready to wear.
-              </p>
-
-              <div className="flex items-center justify-between mt-4">
-                <div>
-                  <div className="text-sm text-gray-500">From</div>
-                  <div className="text-lg font-bold text-gray-900">KES 60 / item</div>
-                </div>
-
-                <a
-                  href="/shops"
-                  className="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition"
-                >
-                  View Shops
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition overflow-hidden flex flex-col">
-            <div className="relative h-48">
-              <img
-                src={ironingImg2}
-                alt="Folding & Packaging"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute left-4 top-4 bg-white/90 text-xs text-gray-700 px-3 py-1 rounded-full font-semibold">
-                Careful
-              </div>
-            </div>
-
-            <div className="p-5 flex-1 flex flex-col">
-              <h3 className="font-bold text-lg text-gray-900 mb-2">Folding & Packaging</h3>
-              <p className="text-sm text-gray-500 mb-4 flex-1">
-                Neatly folded and packaged clothes, ideal for storage or gifting — attention to detail guaranteed.
-              </p>
-
-              <div className="flex items-center justify-between mt-4">
-                <div>
-                  <div className="text-sm text-gray-500">From</div>
-                  <div className="text-lg font-bold text-gray-900">KES 40 / item</div>
-                </div>
-
-                <a
-                  href="/shops"
-                  className="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition"
-                >
-                  View Shops
-                </a>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
 
-        {/* Secondary CTA */}
-        <div className="mt-12 text-center">
-          <p className="text-gray-600 mb-4">
-            Want a custom service or bulk pricing? Our partner shops offer tailored solutions for businesses and hotels.
-          </p>
-          <div className="inline-flex gap-4">
-            <a
-              href="/contact"
-              className="px-6 py-3 rounded-lg bg-white border border-gray-200 text-gray-800 hover:shadow-md transition"
-            >
-              Contact Sales
-            </a>
-            <a
-              href="/bookpickup"
-              className="px-6 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
-            >
-              Book a Pickup
-            </a>
+        <div className="mt-14 grid gap-8 lg:grid-cols-[1fr_1.5fr] items-start">
+          <div>
+            <h2 className="text-[26px] sm:text-3xl font-extrabold tracking-tight leading-tight text-slate-900">
+              Good to know before you book
+            </h2>
+            <Link to="/shops" className={`${btn.primary} mt-6`}>Find a laundry</Link>
           </div>
+
+          <dl className={`${card} divide-y divide-blue-100`}>
+            {NOTES.map(([k, v]) => (
+              <div key={k} className="p-5 sm:flex gap-6">
+                <dt className="text-sm font-bold text-blue-700 sm:w-24 shrink-0">{k}</dt>
+                <dd className="text-slate-700 mt-1 sm:mt-0 leading-relaxed">{v}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
+
+export default Services;
+
+
+// import { Link } from "react-router-dom";
+// import { BedDouble, Droplets, Shirt, Zap } from "lucide-react";
+// import { PageHeader, Pill, btn, card, wrap } from "../components/ui";
+
+// // No prices here on purpose: every laundry sets its own, and they're shown on the shop's page.
+// const SERVICES = [
+//   {
+//     icon: Droplets,
+//     name: "Wash & fold",
+//     priced: "By the kilo",
+//     text: "Everyday clothes, bedding and towels, washed, dried and folded. The usual way to send a basket of laundry.",
+//   },
+//   {
+//     icon: Shirt,
+//     name: "Dry cleaning",
+//     priced: "By the item",
+//     text: "Suits, dresses, coats and delicate fabrics that shouldn't go in a normal wash.",
+//   },
+//   {
+//     icon: Zap,
+//     name: "Ironing",
+//     priced: "By the item",
+//     text: "Shirts, trousers and work clothes pressed and returned ready to wear.",
+//   },
+//   {
+//     icon: BedDouble,
+//     name: "Duvets, curtains & bulky items",
+//     priced: "By the item",
+//     text: "The things that don't fit in a machine at home. Not every laundry takes these, so check the shop page.",
+//   },
+// ];
+
+// const NOTES = [
+//   ["Prices", "Every laundry sets its own. Open a shop to see what it charges, by the kilo or by the item."],
+//   ["Weight", "When you book by weight you pick a load size. It's an estimate. The shop confirms the exact weight when it collects."],
+//   ["Paying", "You pay with M-Pesa after you book, from My Orders."],
+// ];
+
+// function Services() {
+//   return (
+//     <div>
+//       <PageHeader title="Services">
+//         <p className="text-lg text-slate-600 mt-3 max-w-xl">
+//           Most laundries on DryMe offer the same few things. Which ones, and at what price, depends on the shop.
+//         </p>
+//       </PageHeader>
+
+//       <div className={`${wrap} py-10 sm:py-14`}>
+//         <div className="grid gap-5 sm:grid-cols-2">
+//           {SERVICES.map(({ icon: Icon, name, priced, text }) => (
+//             <div key={name} className={`${card} p-6 sm:p-7 flex gap-5`}>
+//               <span className="flex items-center justify-center w-12 h-12 rounded-xl bg-blue-50 text-blue-600 shrink-0">
+//                 <Icon size={24} />
+//               </span>
+//               <div>
+//                 <h2 className="text-lg font-extrabold text-slate-900">{name}</h2>
+//                 <p className="text-slate-600 mt-1.5 leading-relaxed">{text}</p>
+//                 <div className="mt-3"><Pill>{priced}</Pill></div>
+//               </div>
+//             </div>
+//           ))}
+//         </div>
+
+//         <div className="mt-14 grid gap-8 lg:grid-cols-[1fr_1.5fr] items-start">
+//           <div>
+//             <h2 className="text-[26px] sm:text-3xl font-extrabold tracking-tight leading-tight text-slate-900">
+//               Good to know before you book
+//             </h2>
+//             <Link to="/shops" className={`${btn.primary} mt-6`}>Find a laundry</Link>
+//           </div>
+
+//           <dl className={`${card} divide-y divide-blue-100`}>
+//             {NOTES.map(([k, v]) => (
+//               <div key={k} className="p-5 sm:flex gap-6">
+//                 <dt className="text-sm font-bold text-blue-700 sm:w-24 shrink-0">{k}</dt>
+//                 <dd className="text-slate-700 mt-1 sm:mt-0 leading-relaxed">{v}</dd>
+//               </div>
+//             ))}
+//           </dl>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
+// export default Services;

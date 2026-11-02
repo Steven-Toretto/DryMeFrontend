@@ -1,12 +1,9 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { registerUser } from "../api";
-import { Shirt, Store, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Shirt, Store } from "lucide-react";
+import { Logo, btn, card, field, fieldLabel, textLink } from "../components/ui";
 
-const PAPER = "#F1EAD8";
-const CARD = "#FBF8EF";
-const INK = "#2B2A25";
-const TICKET_FONT = "'Special Elite', 'Courier New', monospace";
 
 function Register() {
   const navigate = useNavigate();
@@ -63,103 +60,84 @@ function Register() {
     setLoading(false);
   };
 
-  return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4 py-12"
-      style={{
-        background: PAPER,
-        backgroundImage: "radial-gradient(circle at 1px 1px, rgba(0,0,0,0.04) 1px, transparent 0)",
-        backgroundSize: "16px 16px",
-      }}
+  const roleCard = (value, Icon, title, text) => (
+    <button
+      type="button"
+      onClick={() => setForm({ ...form, role: value })}
+      aria-pressed={form.role === value}
+      className={`text-left p-4 rounded-xl border-2 transition ${
+        form.role === value ? "border-blue-600 bg-blue-50" : "border-slate-200 hover:border-blue-300"
+      }`}
     >
-      <div className="w-full max-w-md">
+      <Icon size={20} className={form.role === value ? "text-blue-600" : "text-slate-400"} />
+      <span className="block font-bold text-slate-900 mt-2">{title}</span>
+      <span className="block text-xs text-slate-500 mt-0.5 leading-snug">{text}</span>
+    </button>
+  );
 
-        {/* BRAND */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 rounded-full border-2 flex items-center justify-center mb-3" style={{ borderColor: INK, background: CARD }}>
-            <Shirt size={26} style={{ color: INK }} strokeWidth={1.75} />
-          </div>
-          <h1 className="font-black text-3xl tracking-tight" style={{ color: INK }}>DryMe</h1>
-          <p className="text-sm mt-1" style={{ fontFamily: TICKET_FONT, color: `${INK}80` }}>Kenya's laundry marketplace</p>
+  const passwordField = (id, label, value, onChange, shown, toggle, placeholder) => (
+    <div>
+      <label htmlFor={id} className={fieldLabel}>{label}</label>
+      <div className="relative">
+        <input
+          id={id}
+          name={id}
+          type={shown ? "text" : "password"}
+          placeholder={placeholder}
+          value={value}
+          onChange={onChange}
+          required
+          autoComplete="new-password"
+          className={`${field} pr-20`}
+        />
+        <button
+          type="button"
+          onClick={toggle}
+          className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-2 text-sm font-semibold text-blue-700 hover:text-blue-800"
+        >
+          {shown ? "Hide" : "Show"}
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="bg-blue-50 px-4 py-12 sm:py-16">
+      <div className="w-full max-w-md mx-auto">
+
+        <div className="flex flex-col items-center text-center mb-8">
+          <Logo />
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 mt-6">Create your account</h1>
+          <p className="text-slate-600 mt-1.5">Book pickups and track orders, or list your laundry.</p>
         </div>
 
-        {/* TICKET CARD */}
-        <form
-          onSubmit={handleSubmit}
-          className="relative rounded-sm border overflow-hidden"
-          style={{ background: CARD, borderColor: `${INK}1F`, boxShadow: `0 1px 0 ${INK}0A` }}
-          aria-label="Register form"
-        >
-          {/* punch hole */}
-          <div className="absolute -top-2.5 left-8 w-4 h-4 rounded-full border" style={{ background: PAPER, borderColor: `${INK}25` }} />
+        <form onSubmit={handleSubmit} className={`${card} p-6 sm:p-8`} aria-label="Register form">
 
-          {/* HEADER */}
-          <div className="px-8 pt-9 pb-6 border-b border-dashed" style={{ borderColor: `${INK}20` }}>
-            <p className="text-[10px] tracking-[0.25em] mb-1.5" style={{ fontFamily: TICKET_FONT, color: `${INK}66` }}>
-              NEW MEMBER SIGN-UP
-            </p>
-            <h2 className="text-2xl font-bold" style={{ color: INK }}>Create your account</h2>
-            <p className="text-sm mt-1" style={{ color: `${INK}80` }}>Join DryMe — book pickups, manage orders</p>
-          </div>
-
-          <div className="px-8 py-6">
-
-            {/* Error */}
-            {error && (
-              <div role="alert" className="mb-5 flex items-start gap-2.5 p-3.5 border rounded-sm" style={{ borderColor: "#9C3B2E40", background: "#9C3B2E0D" }}>
-                <AlertTriangle size={15} className="mt-0.5 shrink-0" style={{ color: "#9C3B2E" }} />
-                <p className="text-sm" style={{ color: "#9C3B2E" }}>{error}</p>
-              </div>
-            )}
-
-            {/* Success */}
-            {success && (
-              <div role="status" className="mb-5 flex items-start gap-2.5 p-3.5 border rounded-sm" style={{ borderColor: "#3F6B4740", background: "#3F6B470D" }}>
-                <CheckCircle2 size={15} className="mt-0.5 shrink-0" style={{ color: "#3F6B47" }} />
-                <p className="text-sm" style={{ color: "#3F6B47" }}>{success}</p>
-              </div>
-            )}
-
-            {/* Account type — ticket-stamp toggle */}
-            <div className="mb-5">
-              <label className="block text-xs font-bold uppercase tracking-wide mb-2" style={{ fontFamily: TICKET_FONT, color: `${INK}80` }}>
-                I am a
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setForm({ ...form, role: "customer" })}
-                  className="flex flex-col cursor-pointer items-center gap-1.5 py-3 rounded-sm border-2 text-sm font-bold transition"
-                  style={
-                    form.role === "customer"
-                      ? { borderColor: "#35548C", color: "#35548C", background: "#35548C0D" }
-                      : { borderColor: `${INK}20`, color: `${INK}70` }
-                  }
-                >
-                  <Shirt size={18} />
-                  Customer
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setForm({ ...form, role: "owner" })}
-                  className="flex flex-col cursor-pointer items-center gap-1.5 py-3 rounded-sm border-2 text-sm font-bold transition"
-                  style={
-                    form.role === "owner"
-                      ? { borderColor: "#35548C", color: "#35548C", background: "#35548C0D" }
-                      : { borderColor: `${INK}20`, color: `${INK}70` }
-                  }
-                >
-                  <Store size={18} />
-                  Shop Owner
-                </button>
-              </div>
+          {error && (
+            <div role="alert" className="mb-5 flex items-start gap-2.5 p-3.5 border border-red-200 bg-red-50 rounded-lg">
+              <AlertTriangle size={16} className="mt-0.5 shrink-0 text-red-600" />
+              <p className="text-sm text-red-700">{error}</p>
             </div>
+          )}
 
-            {/* Username */}
-            <div className="mb-4">
-              <label htmlFor="username" className="block text-xs font-bold uppercase tracking-wide mb-1.5" style={{ fontFamily: TICKET_FONT, color: `${INK}80` }}>
-                Username
-              </label>
+          {success && (
+            <div role="status" className="mb-5 flex items-start gap-2.5 p-3.5 border border-emerald-200 bg-emerald-50 rounded-lg">
+              <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-emerald-600" />
+              <p className="text-sm text-emerald-700">{success}</p>
+            </div>
+          )}
+
+          <fieldset className="mb-5">
+            <legend className={fieldLabel}>I am a</legend>
+            <div className="grid grid-cols-2 gap-3">
+              {roleCard("customer", Shirt, "Customer", "I want my laundry done")}
+              {roleCard("owner", Store, "Shop owner", "I run a laundry")}
+            </div>
+          </fieldset>
+
+          <div className="space-y-5">
+            <div>
+              <label htmlFor="username" className={fieldLabel}>Username</label>
               <input
                 id="username"
                 name="username"
@@ -169,17 +147,12 @@ function Register() {
                 onChange={(e) => setForm({ ...form, username: e.target.value })}
                 required
                 autoComplete="username"
-                aria-required="true"
-                className="w-full border rounded-sm px-4 py-3 text-sm focus:outline-none focus:ring-2 transition"
-                style={{ borderColor: `${INK}25`, background: PAPER, color: INK }}
+                className={field}
               />
             </div>
 
-            {/* Email */}
-            <div className="mb-4">
-              <label htmlFor="email" className="block text-xs font-bold uppercase tracking-wide mb-1.5" style={{ fontFamily: TICKET_FONT, color: `${INK}80` }}>
-                Email address
-              </label>
+            <div>
+              <label htmlFor="email" className={fieldLabel}>Email address</label>
               <input
                 id="email"
                 name="email"
@@ -189,142 +162,60 @@ function Register() {
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 required
                 autoComplete="email"
-                aria-required="true"
-                className="w-full border rounded-sm px-4 py-3 text-sm focus:outline-none focus:ring-2 transition"
-                style={{ borderColor: `${INK}25`, background: PAPER, color: INK }}
+                className={field}
               />
             </div>
 
-            {/* Phone + Location side by side */}
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="grid sm:grid-cols-2 gap-5">
               <div>
-                <label htmlFor="phone" className="block text-xs font-bold uppercase tracking-wide mb-1.5" style={{ fontFamily: TICKET_FONT, color: `${INK}80` }}>
-                  Phone
-                </label>
+                <label htmlFor="phone" className={fieldLabel}>Phone</label>
                 <input
                   id="phone"
                   name="phone"
-                  type="text"
-                  placeholder="2547XXXXXXXX"
+                  type="tel"
+                  inputMode="tel"
+                  placeholder="0712 345 678"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className="w-full border rounded-sm px-4 py-3 text-sm focus:outline-none focus:ring-2 transition"
-                  style={{ borderColor: `${INK}25`, background: PAPER, color: INK }}
+                  className={field}
                 />
               </div>
               <div>
-                <label htmlFor="location" className="block text-xs font-bold uppercase tracking-wide mb-1.5" style={{ fontFamily: TICKET_FONT, color: `${INK}80` }}>
-                  Location
-                </label>
+                <label htmlFor="location" className={fieldLabel}>Location</label>
                 <input
                   id="location"
                   name="location"
                   type="text"
-                  placeholder="Your location"
+                  placeholder="e.g. Kilimani"
                   value={form.location}
                   onChange={(e) => setForm({ ...form, location: e.target.value })}
-                  className="w-full border rounded-sm px-4 py-3 text-sm focus:outline-none focus:ring-2 transition"
-                  style={{ borderColor: `${INK}25`, background: PAPER, color: INK }}
+                  className={field}
                 />
               </div>
             </div>
 
-            {/* Password */}
-            <div className="mb-4">
-              <label htmlFor="password" className="block text-xs font-bold uppercase tracking-wide mb-1.5" style={{ fontFamily: TICKET_FONT, color: `${INK}80` }}>
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Create a password"
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  required
-                  autoComplete="new-password"
-                  aria-required="true"
-                  className="w-full border rounded-sm px-4 py-3 pr-16 text-sm focus:outline-none focus:ring-2 transition"
-                  style={{ borderColor: `${INK}25`, background: PAPER, color: INK }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold transition"
-                  style={{ color: "#35548C" }}
-                >
-                  {showPassword ? "Hide" : "Show"}
-                </button>
-              </div>
-            </div>
+            {passwordField(
+              "password", "Password", form.password,
+              (e) => setForm({ ...form, password: e.target.value }),
+              showPassword, () => setShowPassword(!showPassword), "Create a password",
+            )}
 
-            {/* Confirm Password */}
-            <div className="mb-6">
-              <label htmlFor="confirmPassword" className="block text-xs font-bold uppercase tracking-wide mb-1.5" style={{ fontFamily: TICKET_FONT, color: `${INK}80` }}>
-                Confirm password
-              </label>
-              <div className="relative">
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type={showConfirm ? "text" : "password"}
-                  placeholder="Repeat your password"
-                  value={form.confirmPassword}
-                  onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
-                  required
-                  autoComplete="new-password"
-                  aria-required="true"
-                  className="w-full border rounded-sm px-4 py-3 pr-16 text-sm focus:outline-none focus:ring-2 transition"
-                  style={{ borderColor: `${INK}25`, background: PAPER, color: INK }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirm(!showConfirm)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold transition"
-                  style={{ color: "#35548C" }}
-                >
-                  {showConfirm ? "Hide" : "Show"}
-                </button>
-              </div>
-            </div>
+            {passwordField(
+              "confirmPassword", "Confirm password", form.confirmPassword,
+              (e) => setForm({ ...form, confirmPassword: e.target.value }),
+              showConfirm, () => setShowConfirm(!showConfirm), "Repeat your password",
+            )}
 
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={loading}
-              aria-disabled={loading}
-              className="w-full py-3.5 cursor-pointer rounded-sm text-white font-bold text-sm transition disabled:opacity-60"
-              style={{ background: "#35548C" }}
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                  </svg>
-                  Creating account...
-                </span>
-              ) : (
-                "Create account"
-              )}
+            <button type="submit" disabled={loading} aria-disabled={loading} className={`${btn.primary} w-full`}>
+              {loading ? "Creating account…" : "Create account"}
             </button>
-
-            {/* Footer link */}
-            <p className="text-center text-sm mt-6" style={{ color: `${INK}80` }}>
-              Already have an account?{" "}
-              <Link to="/login" className="font-bold hover:underline" style={{ color: "#35548C" }}>
-                Sign in
-              </Link>
-            </p>
-
           </div>
         </form>
 
-        <p className="text-center text-xs mt-6" style={{ fontFamily: TICKET_FONT, color: `${INK}55` }}>
-          © 2026 DryMe · Kenya's laundry marketplace
+        <p className="text-center text-sm text-slate-600 mt-6">
+          Already have an account?{" "}
+          <Link to="/login" className={textLink}>Sign in</Link>
         </p>
-
       </div>
     </div>
   );

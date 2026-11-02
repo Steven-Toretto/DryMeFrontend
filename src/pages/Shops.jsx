@@ -1,20 +1,25 @@
-import { useEffect, useState, useContext } from "react";
+import { useContext, useEffect, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Edit2, Search, Shirt, Trash2 } from "lucide-react";
 import { getShops, deleteShop } from "../api";
-import { useNavigate, Link } from "react-router-dom";
-import { MapPin, Search, Edit2, Trash2, Store, Star } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
+import ShopCard from "../components/ShopCard";
+import { PageHeader, btn, card, textLink, wrap } from "../components/ui";
+
+const PAGE_SIZE = 10;
 
 function Shops() {
+  const [searchParams] = useSearchParams();
   const [shops, setShops] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(searchParams.get("q") || ""); // the home page search lands here
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
 
-  // ✅ Fetch shops for EVERYONE — no token check
+  // Everyone can browse shops, signed in or not
   useEffect(() => {
     fetchShops(1);
   }, []);
@@ -24,7 +29,7 @@ function Shops() {
       setLoading(true);
       const data = await getShops(pageNum);
       setShops(data.results ?? data);
-      setTotalPages(Math.ceil((data.count ?? data.length) / 10));
+      setTotalPages(Math.ceil((data.count ?? data.length) / PAGE_SIZE));
       setPage(pageNum);
     } catch (error) {
       console.error("Fetch shops error:", error);
@@ -52,206 +57,101 @@ function Shops() {
     }
   };
 
+  const ownerButton =
+    "w-9 h-9 flex items-center justify-center rounded-lg bg-white/95 border border-white shadow hover:bg-white transition";
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div>
+      <PageHeader title="Find a laundry">
+        <p className="text-lg text-slate-600 mt-3 max-w-xl">
+          Search by shop name or neighbourhood, then book a pickup.
+        </p>
 
-      {/* HERO BANNER */}
-      <div className="bg-gradient-to-br from-[#2A4370] via-[#35548C] to-[#4A6699] text-white py-14 px-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-72 h-72 bg-white/5 rounded-full -translate-y-1/3 translate-x-1/4 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-56 h-56 bg-white/5 rounded-full translate-y-1/3 -translate-x-1/4 pointer-events-none" />
-
-        <div className="max-w-6xl mx-auto relative z-10">
-          <span className="inline-block text-[#BBCBE3] text-xs font-bold tracking-widest uppercase mb-3">
-            Browse
-          </span>
-          <h1 className="text-3xl md:text-4xl font-black mb-2">Laundry Shops</h1>
-          <p className="text-[#DDE6F2]/80 text-sm mb-8 max-w-md">
-            Find trusted laundry shops near you — book a pickup in seconds.
-          </p>
-
-          {/* SEARCH */}
-          <div className="relative max-w-xl">
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by shop name or location..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-white text-gray-800 placeholder-gray-400 rounded-xl pl-11 pr-4 py-3.5 text-sm shadow-lg focus:outline-none focus:ring-2 focus:ring-[#93A9CE]"
-            />
-          </div>
+        <div className="relative max-w-xl mt-6">
+          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <input
+            type="search"
+            placeholder="Search by name or location, e.g. Kilimani"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Search laundries"
+            className="w-full min-h-[52px] pl-11 pr-4 bg-white border border-blue-200 rounded-xl text-base text-slate-900 placeholder:text-slate-400 shadow-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+          />
         </div>
-      </div>
+      </PageHeader>
 
-      <div className="max-w-6xl mx-auto px-6 py-10">
+      <div className={`${wrap} py-8 sm:py-10`}>
 
-        {/* RESULTS COUNT */}
-        <div className="flex items-center justify-between mb-6">
-          <p className="text-sm text-gray-500">
-            {loading ? "Loading shops..." : (
+        {/* RESULT COUNT */}
+        <div className="flex items-center justify-between mb-6 min-h-[24px]">
+          <p className="text-sm font-semibold text-slate-500">
+            {loading ? (
+              "Loading shops…"
+            ) : (
               <>
-                <span className="font-semibold text-gray-700">{filteredShops.length}</span>
-                {" "}{filteredShops.length === 1 ? "shop" : "shops"} found
-                {search && <span className="text-gray-400"> for "{search}"</span>}
+                {filteredShops.length} {filteredShops.length === 1 ? "shop" : "shops"}
+                {search && <span> for “{search}”</span>}
               </>
             )}
           </p>
           {search && (
-            <button
-              onClick={() => setSearch("")}
-              className="text-xs text-[#35548C] hover:underline font-medium"
-            >
+            <button onClick={() => setSearch("")} className={`${textLink} text-sm`}>
               Clear search
             </button>
           )}
         </div>
 
-        {/* LOADING SKELETON */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl border border-gray-100 overflow-hidden animate-pulse">
-                <div className="h-44 bg-gray-100" />
-                <div className="p-4 space-y-2">
-                  <div className="h-4 bg-gray-100 rounded w-3/4" />
-                  <div className="h-3 bg-gray-100 rounded w-1/2" />
-                  <div className="h-3 bg-gray-100 rounded w-full" />
-                  <div className="h-3 bg-gray-100 rounded w-2/3" />
-                  <div className="flex gap-2 pt-2">
-                    <div className="h-9 bg-gray-100 rounded-xl flex-1" />
-                    <div className="h-9 bg-gray-100 rounded-xl flex-1" />
-                  </div>
-                </div>
-              </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-[360px] bg-blue-50 rounded-2xl animate-pulse" />
             ))}
           </div>
         ) : filteredShops.length === 0 ? (
-          /* EMPTY */
-          <div className="bg-white rounded-2xl border border-gray-100 p-16 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mx-auto mb-4">
-              <Store size={28} className="text-gray-300" />
-            </div>
-            <p className="text-gray-500 font-medium">No shops found</p>
-            {search ? (
-              <p className="text-sm text-gray-400 mt-1">Try a different search term</p>
-            ) : (
-              <p className="text-sm text-gray-400 mt-1">Check back soon!</p>
+          <div className={`${card} max-w-lg mx-auto p-8 text-center`}>
+            <span className="mx-auto flex items-center justify-center w-14 h-14 rounded-2xl bg-blue-50 text-blue-500">
+              <Shirt size={26} />
+            </span>
+            <p className="text-xl font-extrabold text-slate-900 mt-4">No shops found</p>
+            <p className="text-slate-600 mt-1.5">
+              {search ? "Try a different name or neighbourhood." : "Check back soon, or list your own shop."}
+            </p>
+            {search && (
+              <button onClick={() => setSearch("")} className={`${btn.ghost} mt-5`}>
+                Show all shops
+              </button>
             )}
           </div>
         ) : (
-          /* SHOP GRID */
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {filteredShops.map((shop) => {
               const isOwner = user?.role === "owner" && user?.username === shop.owner;
-              const imageUrl = shop.image?.startsWith("http")
-                ? shop.image
-                : shop.image
-                ? `${import.meta.env.VITE_API_URL}${shop.image}`
-                : null;
-
               return (
-                <div
+                <ShopCard
                   key={shop.id}
-                  onClick={() => navigate(`/shop/${shop.id}`)}
-                  className="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition duration-300 overflow-hidden cursor-pointer flex flex-col"
-                >
-                  {/* IMAGE */}
-                  <div className="relative h-44 overflow-hidden bg-gray-100">
-                    {imageUrl ? (
-                      <img
-                        src={imageUrl}
-                        alt={shop.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center text-gray-300">
-                        <Store size={36} />
-                        <p className="text-xs mt-2">No Image</p>
-                      </div>
-                    )}
-
-                    {/* Badge */}
-                    <span className="absolute top-3 left-3 bg-gradient-to-r from-[#35548C] to-[#4A6699] text-white text-xs px-2.5 py-1 rounded-full font-semibold shadow-sm">
-                      Featured
-                    </span>
-
-                    {/* OWNER CONTROLS */}
-                    {isOwner && (
-                      <div
-                        onClick={(e) => e.stopPropagation()}
-                        className="absolute top-3 right-3 flex gap-1.5"
-                      >
+                  shop={shop}
+                  showMap
+                  controls={
+                    isOwner && (
+                      <>
                         <button
                           onClick={() => navigate(`/edit-shop/${shop.id}`)}
-                          className="bg-white/95 text-[#35548C] p-1.5 rounded-lg shadow hover:bg-[#F0F4FA] transition"
+                          aria-label={`Edit ${shop.name}`}
+                          className={`${ownerButton} text-blue-700`}
                         >
-                          <Edit2 size={13} />
+                          <Edit2 size={14} />
                         </button>
                         <button
                           onClick={() => handleDelete(shop.id)}
-                          className="bg-white/95 text-red-500 p-1.5 rounded-lg shadow hover:bg-red-50 transition"
+                          aria-label={`Delete ${shop.name}`}
+                          className={`${ownerButton} text-red-600`}
                         >
-                          <Trash2 size={13} />
+                          <Trash2 size={14} />
                         </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* CONTENT */}
-                  <div className="p-4 flex flex-col flex-1">
-                    <h3 className="font-bold text-gray-900 line-clamp-1">{shop.name}</h3>
-                    <p className="flex items-center gap-1 text-gray-400 text-xs mt-1">
-                      <MapPin size={11} className="text-red-400 shrink-0" />
-                      {shop.location}
-                    </p>
-                    {shop.lat && shop.lng && (
-                      <a
-                        href={`https://www.google.com/maps?q=${shop.lat},${shop.lng}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="flex items-center gap-1 text-xs font-semibold mt-1 hover:underline"
-                        style={{ color: "#35548C" }}
-                      >
-                        <MapPin size={11} /> View on map
-                      </a>
-                    )}
-                    {shop.review_count > 0 ? (
-                      <p className="flex items-center gap-1 text-xs mt-1.5">
-                        <Star size={12} fill="#B5811E" style={{ color: "#B5811E" }} />
-                        <span className="font-semibold text-gray-700">{shop.average_rating}</span>
-                        <span className="text-gray-400">({shop.review_count})</span>
-                      </p>
-                    ) : (
-                      <p className="text-xs text-gray-300 mt-1.5">No reviews yet</p>
-                    )}
-                    <p className="text-gray-500 text-sm mt-2 line-clamp-2 flex-1">
-                      {shop.description}
-                    </p>
-
-                    {/* ACTIONS */}
-                    <div className="mt-4 flex gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/shop/${shop.id}`);
-                        }}
-                        className="flex-1 bg-gradient-to-r from-[#35548C] to-[#4A6699] hover:from-[#2A4370] hover:to-[#35548C] text-white py-2.5 rounded-xl font-semibold text-sm transition"
-                      >
-                        View
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/shop/${shop.id}#book`);
-                        }}
-                        className="flex-1 border-2 border-gray-100 text-gray-600 py-2.5 rounded-xl font-semibold text-sm hover:bg-gray-50 transition"
-                      >
-                        Book
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                      </>
+                    )
+                  }
+                />
               );
             })}
           </div>
@@ -259,27 +159,23 @@ function Shops() {
 
         {/* PAGINATION */}
         {!loading && totalPages > 1 && (
-          <div className="flex justify-center gap-2 mt-10">
-            <button
-              onClick={() => fetchShops(page - 1)}
-              disabled={page === 1}
-              className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition"
-            >
+          <div className="flex items-center justify-center gap-4 mt-12">
+            <button onClick={() => fetchShops(page - 1)} disabled={page === 1} className={btn.ghost}>
               Previous
             </button>
-            <span className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#35548C] to-[#4A6699] text-white text-sm font-bold">
-              {page} / {totalPages}
+            <span className="text-sm font-semibold text-slate-600">
+              Page {page} of {totalPages}
             </span>
-            <button
-              onClick={() => fetchShops(page + 1)}
-              disabled={page === totalPages}
-              className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition"
-            >
+            <button onClick={() => fetchShops(page + 1)} disabled={page === totalPages} className={btn.ghost}>
               Next
             </button>
           </div>
         )}
 
+        <p className="mt-12 text-center text-sm text-slate-500">
+          Run a laundry?{" "}
+          <Link to="/register" className={textLink}>List your shop</Link>
+        </p>
       </div>
     </div>
   );

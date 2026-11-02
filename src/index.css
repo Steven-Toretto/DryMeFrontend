@@ -1,14 +1,29 @@
 @import "tailwindcss";
 
 @theme {
-  --color-blue-50:  #F0F4FA;
-  --color-blue-100: #DDE6F2;
-  --color-blue-200: #BBCBE3;
-  --color-blue-300: #93A9CE;
-  --color-blue-400: #6884B4;
-  --color-blue-500: #4A6699;
-  --color-blue-600: #35548C;
-  --color-blue-700: #2A4370;
-  --color-blue-800: #223655;
-  --color-blue-900: #1B2A42;
+  /* Soft blue. Every blue-* class on the site uses this scale; blue-600 is the brand colour. */
+  --color-blue-50:  #F3F8FD;
+  --color-blue-100: #E5F0FA;
+  --color-blue-200: #CBE0F3;
+  --color-blue-300: #A3C8E9;
+  --color-blue-400: #6FA8DB;
+  --color-blue-500: #4189CB;
+  --color-blue-600: #2B6FB4;
+  --color-blue-700: #235A93;
+  --color-blue-800: #1D4A78;
+  --color-blue-900: #173B60;
+
+  --font-sans: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: #ffffff;
+    color: var(--color-slate-800);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-blue-500);
+    outline-offset: 2px;
+  }
 }
