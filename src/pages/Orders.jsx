@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
@@ -11,11 +10,12 @@ import {
   Phone, MapPin, Archive, Package, Droplets,
   CheckCircle2, RotateCcw, CreditCard,
   Shirt, StickyNote, Pencil, ChevronDown,
-  ThumbsUp, XCircle, AlertTriangle, Ban, Star, Navigation, Scale,
+  ThumbsUp, XCircle, AlertTriangle, Ban, Star, Navigation, Scale, Clock,
 } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
 import WeighInPanel from "../components/WeighInPanel";
 import { kes, apiError } from "../components/walletFormat";
+import { pickupText } from "../components/bookingFormat";
 import {
   awaitingWeighIn, canPay, canStartWashing, formatKg, isWeighInOrder, isWeighed, needsApproval, priceChange,
 } from "../components/orderPricing";
@@ -407,8 +407,12 @@ function Orders() {
     }
   };
 
+  // Back into the booking steps with the service (and amount) already chosen.
   const handleBookAgain = (order) => {
-    navigate(`/shop/${order.shop.id}?service=${order.service.id}&weight=${order.weight}`);
+    const params = new URLSearchParams({ service: String(order.service.id) });
+    if (order.quantity) params.set("quantity", String(order.quantity));
+    else if (order.estimated_weight ?? order.weight) params.set("weight", String(order.estimated_weight ?? order.weight));
+    navigate(`/shop/${order.shop.id}/book?${params}`);
   };
 
   // ===========================
@@ -560,6 +564,11 @@ function Orders() {
                     >
                       {order.shop?.name}
                     </Link>
+                    {order.pickup_date && (
+                      <p className="flex items-center gap-1.5 text-xs mt-2" style={{ fontFamily: TICKET_FONT, color: `${INK}99` }}>
+                        <Clock size={12} /> PICKUP · {pickupText(order)}
+                      </p>
+                    )}
 
                     {/* RECEIPT LINES — weight/quantity / total, like a printed line item */}
                     <div className="mt-4 mb-5 text-sm" style={{ fontFamily: TICKET_FONT, color: INK }}>
@@ -1127,4 +1136,3 @@ function Orders() {
 }
 
 export default Orders;
-

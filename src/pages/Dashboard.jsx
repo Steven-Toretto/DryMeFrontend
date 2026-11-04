@@ -34,6 +34,7 @@ import { kes, dedupeById } from "../components/walletFormat";
 import NotificationBell from "../components/NotificationBell";
 import { reverseGeocode } from "../utils/reverseGeocode";
 import WeighInPanel from "../components/WeighInPanel";
+import { pickupText } from "../components/bookingFormat";
 import {
   awaitingWeighIn, canStartWashing, formatKg, isWeighInOrder, isWeighed, needsApproval,
 } from "../components/orderPricing";
@@ -1618,6 +1619,11 @@ const handleUseLocationForEditShop = () => {
                                   : `Est. KES ${order.total_price} · about ${formatKg(order.estimated_weight)}`
                                 : `KES ${order.total_price} · ${order.quantity ? `${order.quantity} item${order.quantity === 1 ? "" : "s"}` : `${order.weight} kg`}`}
                             </p>
+                            {order.pickup_date && (
+                              <p className="text-xs font-bold mt-1" style={{ fontFamily: TICKET_FONT, color: "#1C6E8C" }}>
+                                PICKUP · {pickupText(order)}
+                              </p>
+                            )}
                           </div>
                           <div className="flex flex-col items-end gap-1.5 shrink-0">
                             <StatusStamp status={order.status} rotate={order.id % 2 === 0 ? -4 : 4} />
@@ -1833,5 +1839,3 @@ const handleUseLocationForEditShop = () => {
 };
 
 export default Dashboard;
-
-

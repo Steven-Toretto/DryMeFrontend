@@ -188,6 +188,15 @@ export const cancelOrder = async (id) => {
 };
 
 // ===============================
+// 🕒 PICKUP WINDOWS (public)
+// ===============================
+// The days and two-hour windows that can be booked right now: { timezone, days: [{ date, label, slots: [{ key, label }] }] }
+export const getPickupSlots = async () => {
+  const res = await API.get("pickup-slots/");
+  return res.data;
+};
+
+// ===============================
 // ⚖️ WEIGH-IN (per-kg orders)
 // ===============================
 // Shop: enter the real weight. Answers { message, within_margin, order } with the whole updated order.
@@ -309,5 +318,3 @@ export const changePassword = async (oldPassword, newPassword) => {
 };
 
 export default API;
-
-

@@ -10,6 +10,7 @@ import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Dashboard from "../pages/Dashboard";
 import ShopDetails from "../pages/ShopDetails";
+import BookPickup from "../pages/BookPickup";
 import Services from "../pages/Services";
 import Home from "../pages/Home";
 import EditShop from "../pages/EditShop";
@@ -34,6 +35,7 @@ export default function Router() {
         {/* Public */}
         <Route path="shops" element={<Shops />} />
         <Route path="shop/:id" element={<ShopDetails />} />
+        <Route path="shop/:id/book" element={<BookPickup />} />
         <Route path="services" element={<Services />} />
         <Route path="about" element={<About />} />
         <Route path="contact" element={<Contact />} />
@@ -86,4 +88,3 @@ export default function Router() {
     </Routes>
   );
 }
-
