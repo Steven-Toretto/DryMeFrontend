@@ -91,7 +91,7 @@ function Hero() {
           </h1>
 
           <p className="mt-5 text-lg text-slate-600 max-w-[36ch] leading-relaxed">
-            Book a pickup from a laundry near you and pay with M-Pesa. They collect it, wash it and bring it back.
+            Book a pickup from a laundry near you. They collect it, wash it and bring it back.
           </p>
 
           <form
